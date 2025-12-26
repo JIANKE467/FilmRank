@@ -39,6 +39,10 @@
             <p class="label">Ratings</p>
             <p class="score">{{ rating.rating_count || 0 }}</p>
           </div>
+          <div>
+            <p class="label">Reviews</p>
+            <p class="score">{{ reviewCount }}</p>
+          </div>
           <button class="button secondary" :disabled="!isAuthed" @click="startWatch">Start watching</button>
         </div>
         <p class="muted" v-if="watchMessage">{{ watchMessage }}</p>
@@ -146,6 +150,7 @@ const genres = ref([]);
 const rating = ref({});
 const reviews = ref([]);
 const related = ref([]);
+const reviewCount = ref(0);
 const score = ref(6.5);
 const review = ref("");
 const ratingMessage = ref("");
@@ -206,6 +211,7 @@ async function load() {
   movie.value = data.movie;
   rating.value = data.rating || {};
   genres.value = data.genres || [];
+  reviewCount.value = data.review_count || 0;
   reviews.value = data.reviews || [];
 
   if (genres.value.length) {

@@ -144,7 +144,22 @@ export async function listMovies(req, res, next) {
     } = req.query;
 
     const params = [];
-    let sql = "SELECT m.* FROM movies m";
+    const needsMetrics = sort === "hot" || sort === "rating";
+    const selectFields = ["m.*"];
+    if (needsMetrics) {
+      selectFields.push(
+        "COALESCE(w.watch_count, 0) AS watch_count",
+        "COALESCE(rt.avg_score, 0) AS avg_score",
+        "COALESCE(rt.rating_count, 0) AS rating_count"
+      );
+    }
+    let sql = `SELECT ${selectFields.join(", ")} FROM movies m`;
+
+    if (needsMetrics) {
+      sql +=
+        " LEFT JOIN (SELECT movie_id, COUNT(*) AS watch_count FROM watch_history GROUP BY movie_id) w ON m.movie_id = w.movie_id" +
+        " LEFT JOIN (SELECT movie_id, AVG(score) AS avg_score, COUNT(*) AS rating_count FROM ratings GROUP BY movie_id) rt ON m.movie_id = rt.movie_id";
+    }
 
     if (genre_id) {
       sql += " JOIN movie_genres mg ON m.movie_id = mg.movie_id";
@@ -183,6 +198,10 @@ export async function listMovies(req, res, next) {
 
     if (sort === "latest") {
       sql += " ORDER BY m.release_date DESC";
+    } else if (sort === "hot") {
+      sql += " ORDER BY watch_count DESC, m.movie_id DESC";
+    } else if (sort === "rating") {
+      sql += " ORDER BY avg_score DESC, rating_count DESC, m.movie_id DESC";
     } else if (sort === "top") {
       sql += " ORDER BY m.movie_id DESC";
     } else {
@@ -220,6 +239,10 @@ export async function getMovie(req, res, next) {
       "SELECT AVG(score) AS avg_score, COUNT(*) AS rating_count FROM ratings WHERE movie_id = ?",
       [movieId]
     );
+    const [[reviewCount]] = await pool.query(
+      "SELECT COUNT(*) AS review_count FROM reviews WHERE movie_id = ? AND status = 'visible'",
+      [movieId]
+    );
     const [reviews] = await pool.query(
       "SELECT r.review_id, r.content, r.created_at, u.username FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.movie_id = ? AND r.status = 'visible' ORDER BY r.created_at DESC",
       [movieId]
@@ -229,6 +252,7 @@ export async function getMovie(req, res, next) {
       movie,
       genres,
       rating: ratingStats || { avg_score: null, rating_count: 0 },
+      review_count: reviewCount?.review_count || 0,
       reviews
     });
   } catch (err) {

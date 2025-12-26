@@ -34,11 +34,11 @@
         </div>
         <div class="stat-item">
           <p class="stat-label">Ratings</p>
-          <p class="stat-value">--</p>
+          <p class="stat-value">{{ stats.rating_count }}</p>
         </div>
         <div class="stat-item">
           <p class="stat-label">Reviews</p>
-          <p class="stat-value">--</p>
+          <p class="stat-value">{{ stats.review_count }}</p>
         </div>
       </div>
     </div>
@@ -84,6 +84,7 @@ import useAuth from "../store/auth.js";
 const { state, isAuthed } = useAuth();
 const watchHistory = ref([]);
 const recommendations = ref([]);
+const stats = ref({ rating_count: 0, review_count: 0 });
 
 const initials = computed(() => {
   const name = state.user?.username || "?";
@@ -112,9 +113,11 @@ async function load() {
     ]);
     watchHistory.value = history || [];
     recommendations.value = (recs.items || []).slice(0, 5);
+    stats.value = await api.getUserStats();
   } catch (err) {
     watchHistory.value = [];
     recommendations.value = [];
+    stats.value = { rating_count: 0, review_count: 0 };
   }
 }
 

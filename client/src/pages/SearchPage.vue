@@ -50,7 +50,8 @@
           <label class="label">Sort by</label>
           <select v-model="filters.sort" class="input">
             <option value="latest">Latest</option>
-            <option value="top">Hot</option>
+            <option value="hot">Hot</option>
+            <option value="rating">Top rated</option>
           </select>
         </div>
         <div class="filter-actions">
@@ -58,6 +59,31 @@
           <button class="button secondary" @click="reset">Clear filters</button>
         </div>
       </div>
+    </div>
+
+    <div class="sort-bar">
+      <span class="label">Sort</span>
+      <button
+        class="button"
+        :class="{ secondary: filters.sort !== 'hot' }"
+        @click="setSort('hot')"
+      >
+        Hot
+      </button>
+      <button
+        class="button"
+        :class="{ secondary: filters.sort !== 'rating' }"
+        @click="setSort('rating')"
+      >
+        Top rated
+      </button>
+      <button
+        class="button"
+        :class="{ secondary: filters.sort !== 'latest' }"
+        @click="setSort('latest')"
+      >
+        Latest
+      </button>
     </div>
 
     <p class="muted" v-if="message">{{ message }}</p>
@@ -69,6 +95,9 @@
           <div>
             <h3>{{ movie.title }}</h3>
             <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
+            <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
+              Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
+            </p>
           </div>
           <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">View details</RouterLink>
         </div>
@@ -116,11 +145,22 @@ function reset() {
   load();
 }
 
+function setSort(value) {
+  filters.sort = value;
+  load();
+}
+
 function posterStyle(movie) {
   if (!movie.poster_url) {
     return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
   }
   return { backgroundImage: `url(${movie.poster_url})` };
+}
+
+function formatScore(value) {
+  if (value === null || value === undefined) return "--";
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(1) : "--";
 }
 
 async function load() {

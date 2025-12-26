@@ -42,6 +42,7 @@ export const api = {
   listRecommendations: (algorithm) => request(`/api/recommendations${algorithm ? `?algorithm=${algorithm}` : ""}`),
   startWatch: (payload) => request("/api/watch", { method: "POST", body: JSON.stringify(payload) }),
   listWatchHistory: () => request("/api/watch/history"),
+  getUserStats: () => request("/api/users/me/stats"),
   admin: {
     createMovie: (payload) => request("/api/movies", { method: "POST", body: JSON.stringify(payload) }),
     updateMovie: (id, payload) => request(`/api/movies/${id}`, { method: "PUT", body: JSON.stringify(payload) }),

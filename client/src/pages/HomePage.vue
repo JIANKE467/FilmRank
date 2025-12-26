@@ -69,6 +69,9 @@
             <div>
               <h3>{{ movie.title }}</h3>
               <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
+              <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
+                Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
+              </p>
             </div>
             <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">Details</RouterLink>
           </div>
@@ -89,6 +92,9 @@
             <div>
               <h3>{{ movie.title }}</h3>
               <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
+              <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
+                Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
+              </p>
             </div>
             <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">Details</RouterLink>
           </div>
@@ -122,6 +128,12 @@ function posterStyle(item) {
   return { backgroundImage: `url(${item.poster_url})` };
 }
 
+function formatScore(value) {
+  if (value === null || value === undefined) return "--";
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(1) : "--";
+}
+
 function goSearch() {
   router.push({ path: "/search", query: query.value ? { q: query.value } : {} });
 }
@@ -134,7 +146,7 @@ async function load() {
   message.value = "";
   try {
     const [movies, latestMovies, genreList] = await Promise.all([
-      api.listMovies(),
+      api.listMovies({ sort: "hot" }),
       api.listMovies({ sort: "latest" }),
       api.listGenres()
     ]);

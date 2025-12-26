@@ -10,6 +10,7 @@ import reviewRoutes from "./routes/reviews.js";
 import watchRoutes from "./routes/watch.js";
 import recommendationRoutes from "./routes/recommendations.js";
 import adminRoutes from "./routes/admin.js";
+import userRoutes from "./routes/users.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/watch", watchRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;
