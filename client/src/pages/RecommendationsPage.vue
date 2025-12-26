@@ -22,11 +22,14 @@
 
     <div class="grid" v-if="items.length">
       <article class="movie-card" v-for="item in items" :key="item.movie_id">
-        <div class="poster" :style="posterStyle(item)"></div>
+        <PosterImage :src="item.poster_url" :alt="item.title" />
         <div class="card-body">
           <div>
             <h3>{{ item.title }}</h3>
-            <p class="muted">Score: {{ item.score.toFixed(2) }}</p>
+            <p class="muted" v-if="item.score !== undefined && item.score !== null">
+              Score: {{ item.score.toFixed(2) }}
+            </p>
+            <p class="muted" v-else>Trending pick</p>
             <span class="tag" v-if="item.reason">{{ item.reason }}</span>
           </div>
           <RouterLink class="button secondary" :to="`/movies/${item.movie_id}`">Details</RouterLink>
@@ -42,18 +45,12 @@ import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { api } from "../api.js";
 import useAuth from "../store/auth.js";
+import PosterImage from "../components/PosterImage.vue";
 
 const algorithm = ref("");
 const items = ref([]);
 const message = ref("");
 const { isAuthed } = useAuth();
-
-function posterStyle(item) {
-  if (!item.poster_url) {
-    return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
-  }
-  return { backgroundImage: `url(${item.poster_url})` };
-}
 
 async function load() {
   message.value = "";
@@ -66,7 +63,12 @@ async function load() {
     const data = await api.listRecommendations(algorithm.value || undefined);
     items.value = data.items || [];
     if (!data.batch) {
-      message.value = "No recommendation batch found.";
+      const hot = await api.listMovies({ sort: "hot", limit: 12 });
+      items.value = (hot || []).map((movie) => ({
+        ...movie,
+        reason: "Trending now"
+      }));
+      message.value = "No recommendation batch found. Showing trending picks instead.";
     }
   } catch (err) {
     message.value = err.message;

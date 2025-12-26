@@ -48,7 +48,7 @@
         <h3 class="section-title">Recent watch history</h3>
         <div v-if="watchHistory.length" class="stack">
           <div class="card list-row" v-for="item in watchHistory" :key="item.watch_id">
-            <div class="poster tiny" :style="posterStyle(item)"></div>
+            <PosterImage :src="item.poster_url" :alt="item.title" size="tiny" />
             <div>
               <p class="list-title">{{ item.title }}</p>
               <p class="muted">Watched {{ formatDate(item.watched_at) }}</p>
@@ -62,7 +62,7 @@
         <h3 class="section-title">Your recommendations</h3>
         <div v-if="recommendations.length" class="stack">
           <div class="card list-row" v-for="item in recommendations" :key="item.movie_id">
-            <div class="poster tiny" :style="posterStyle(item)"></div>
+            <PosterImage :src="item.poster_url" :alt="item.title" size="tiny" />
             <div>
               <p class="list-title">{{ item.title }}</p>
               <p class="muted">{{ item.reason || "Recommended for you" }}</p>
@@ -80,6 +80,7 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { api } from "../api.js";
 import useAuth from "../store/auth.js";
+import PosterImage from "../components/PosterImage.vue";
 
 const { state, isAuthed } = useAuth();
 const watchHistory = ref([]);
@@ -90,13 +91,6 @@ const initials = computed(() => {
   const name = state.user?.username || "?";
   return name.slice(0, 2).toUpperCase();
 });
-
-function posterStyle(item) {
-  if (!item.poster_url) {
-    return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
-  }
-  return { backgroundImage: `url(${item.poster_url})` };
-}
 
 function formatDate(value) {
   if (!value) return "--";

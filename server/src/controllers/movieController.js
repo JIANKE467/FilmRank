@@ -140,8 +140,17 @@ export async function listMovies(req, res, next) {
       language,
       min_runtime,
       max_runtime,
-      sort
+      sort,
+      page,
+      page_size,
+      limit
     } = req.query;
+
+    const rawLimit = Number(limit || page_size || 24);
+    const pageSize = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 100) : 24;
+    const rawPage = Number(page || 1);
+    const pageNumber = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const offset = (pageNumber - 1) * pageSize;
 
     const params = [];
     const needsMetrics = sort === "hot" || sort === "rating";
@@ -208,14 +217,17 @@ export async function listMovies(req, res, next) {
       sql += " ORDER BY m.movie_id DESC";
     }
 
+    sql += " LIMIT ? OFFSET ?";
+    params.push(pageSize, offset);
+
     const [rows] = await pool.query(sql, params);
 
-    if (q && rows.length === 0) {
+    if (q && rows.length === 0 && pageNumber === 1) {
       const tmdbLanguage = language || process.env.TMDB_LANGUAGE || "zh-CN";
       const tmdbMovies = await searchTmdbMovies({ query: q, year, language: tmdbLanguage });
       const savedRows = await upsertTmdbMovies(tmdbMovies, tmdbLanguage);
       await cleanupOldTmdbMovies();
-      return res.json(savedRows);
+      return res.json(savedRows.slice(0, pageSize));
     }
 
     return res.json(rows);
@@ -248,12 +260,29 @@ export async function getMovie(req, res, next) {
       [movieId]
     );
 
+    let related = [];
+    if (genres.length > 0) {
+      const [relatedRows] = await pool.query(
+        `SELECT DISTINCT m.movie_id, m.title, m.poster_url, m.year, m.language, m.release_date
+         FROM movies m
+         JOIN movie_genres mg ON m.movie_id = mg.movie_id
+         WHERE mg.genre_id = ?
+           AND m.status = 'active'
+           AND m.movie_id <> ?
+         ORDER BY m.release_date DESC
+         LIMIT 6`,
+        [genres[0].genre_id, movieId]
+      );
+      related = relatedRows;
+    }
+
     return res.json({
       movie,
       genres,
       rating: ratingStats || { avg_score: null, rating_count: 0 },
       review_count: reviewCount?.review_count || 0,
-      reviews
+      reviews,
+      related
     });
   } catch (err) {
     return next(err);

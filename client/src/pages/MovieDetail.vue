@@ -1,7 +1,7 @@
 ﻿<template>
   <section v-if="movie" class="page">
     <div class="detail-hero">
-      <div class="poster large" :style="posterStyle(movie)"></div>
+      <PosterImage :src="movie.poster_url" :alt="movie.title" size="large" />
       <div class="detail-info">
         <p class="eyebrow">Movie detail</p>
         <h1>{{ movie.title }}</h1>
@@ -58,6 +58,10 @@
           <span class="score-pill">{{ score.toFixed(1) }}</span>
         </div>
         <button class="button" :disabled="!isAuthed" @click="submitRating">Submit rating</button>
+        <div class="rating-guide">
+          <p class="label">Rating guide</p>
+          <p class="muted">0-3: Skip, 4-6: Decent, 7-8: Great, 9-10: Must-watch</p>
+        </div>
         <p class="muted" v-if="ratingMessage">{{ ratingMessage }}</p>
       </div>
 
@@ -120,7 +124,7 @@
       </div>
       <div class="grid" v-if="related.length">
         <article class="movie-card" v-for="item in related" :key="item.movie_id">
-          <div class="poster" :style="posterStyle(item)"></div>
+          <PosterImage :src="item.poster_url" :alt="item.title" />
           <div class="card-body">
             <div>
               <h3>{{ item.title }}</h3>
@@ -133,7 +137,14 @@
       <p v-else class="muted">No related titles yet.</p>
     </section>
   </section>
-  <p v-else class="muted">Loading...</p>
+  <section v-else class="page">
+    <div class="card" v-if="errorMessage">
+      <h3>Unable to load movie</h3>
+      <p class="muted">{{ errorMessage }}</p>
+      <button class="button secondary" @click="load({ force: true })">Try again</button>
+    </div>
+    <p v-else class="muted">Loading...</p>
+  </section>
 </template>
 
 <script setup>
@@ -141,6 +152,7 @@ import { ref, onMounted, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { api } from "../api.js";
 import useAuth from "../store/auth.js";
+import PosterImage from "../components/PosterImage.vue";
 
 const route = useRoute();
 const { state, isAuthed } = useAuth();
@@ -151,6 +163,7 @@ const rating = ref({});
 const reviews = ref([]);
 const related = ref([]);
 const reviewCount = ref(0);
+const errorMessage = ref("");
 const score = ref(6.5);
 const review = ref("");
 const ratingMessage = ref("");
@@ -158,13 +171,8 @@ const reviewMessage = ref("");
 const watchMessage = ref("");
 const editingReviewId = ref(null);
 const editingContent = ref("");
-
-function posterStyle(item) {
-  if (!item.poster_url) {
-    return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
-  }
-  return { backgroundImage: `url(${item.poster_url})` };
-}
+const cacheKeyPrefix = "filmrank.movie.";
+const cacheTtlMs = 5 * 60 * 1000;
 
 function formatDate(value) {
   if (!value) return "--";
@@ -206,19 +214,62 @@ async function removeReview(item) {
   }
 }
 
-async function load() {
-  const data = await api.getMovie(route.params.id);
-  movie.value = data.movie;
-  rating.value = data.rating || {};
-  genres.value = data.genres || [];
-  reviewCount.value = data.review_count || 0;
-  reviews.value = data.reviews || [];
+function getCachedMovie(id) {
+  try {
+    const raw = sessionStorage.getItem(`${cacheKeyPrefix}${id}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.timestamp > cacheTtlMs) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
 
-  if (genres.value.length) {
-    const sameGenre = await api.listMovies({ genre_id: genres.value[0].genre_id });
-    related.value = (sameGenre || []).filter((item) => item.movie_id !== movie.value.movie_id).slice(0, 6);
-  } else {
-    related.value = [];
+function setCachedMovie(id, data) {
+  try {
+    sessionStorage.setItem(
+      `${cacheKeyPrefix}${id}`,
+      JSON.stringify({ timestamp: Date.now(), data })
+    );
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+async function load(options = {}) {
+  const { force = false } = options;
+  const movieId = route.params.id;
+  errorMessage.value = "";
+  if (!movieId) {
+    movie.value = null;
+    errorMessage.value = "Invalid movie id.";
+    return;
+  }
+  if (!force) {
+    const cached = getCachedMovie(movieId);
+    if (cached) {
+      movie.value = cached.movie;
+      rating.value = cached.rating || {};
+      genres.value = cached.genres || [];
+      reviewCount.value = cached.review_count || 0;
+      reviews.value = cached.reviews || [];
+      related.value = cached.related || [];
+      return;
+    }
+  }
+  try {
+    const data = await api.getMovie(movieId);
+    movie.value = data.movie;
+    rating.value = data.rating || {};
+    genres.value = data.genres || [];
+    reviewCount.value = data.review_count || 0;
+    reviews.value = data.reviews || [];
+    related.value = data.related || [];
+    setCachedMovie(movieId, data);
+  } catch (err) {
+    movie.value = null;
+    errorMessage.value = err.message || "Failed to load movie details.";
   }
 }
 
@@ -227,7 +278,7 @@ async function submitRating() {
   try {
     await api.rateMovie({ movie_id: movie.value.movie_id, score: Number(score.value) });
     ratingMessage.value = "Rating saved";
-    await load();
+    await load({ force: true });
   } catch (err) {
     ratingMessage.value = err.message;
   }
@@ -239,7 +290,7 @@ async function submitReview() {
     await api.createReview({ movie_id: movie.value.movie_id, content: review.value });
     reviewMessage.value = "Review posted";
     review.value = "";
-    await load();
+    await load({ force: true });
   } catch (err) {
     reviewMessage.value = err.message;
   }
@@ -261,7 +312,7 @@ async function startWatch() {
 
 onMounted(load);
 watch(() => route.params.id, () => {
-  load();
+  load({ force: true });
 });
 </script>
 

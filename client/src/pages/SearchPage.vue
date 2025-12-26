@@ -7,7 +7,60 @@
         <p class="muted">Search by title, year, genre, or language, then refine with advanced filters.</p>
       </div>
       <div class="search-panel">
-        <input v-model="filters.q" class="input" placeholder="Search by title, actor, or keyword" />
+        <div class="search-box">
+          <input
+            v-model="filters.q"
+            class="input"
+            placeholder="Search by title, actor, or keyword"
+            @focus="showSuggestions = true"
+            @blur="hideSuggestions"
+          />
+          <div
+            v-if="showSuggestions && (history.length || suggestions.length || genres.length)"
+            class="suggestion-panel"
+          >
+            <div v-if="history.length" class="suggestion-group">
+              <p class="label">Recent searches</p>
+              <div class="suggestion-row">
+                <button
+                  v-for="item in history"
+                  :key="item"
+                  class="suggestion-chip"
+                  @mousedown.prevent="applySearch(item)"
+                >
+                  {{ item }}
+                </button>
+              </div>
+            </div>
+            <div v-if="suggestions.length" class="suggestion-group">
+              <p class="label">Title matches</p>
+              <div class="suggestion-list">
+                <button
+                  v-for="item in suggestions"
+                  :key="item.movie_id"
+                  class="suggestion-item"
+                  @mousedown.prevent="applySearch(item.title)"
+                >
+                  <span>{{ item.title }}</span>
+                  <span class="muted">{{ item.year || "-" }}</span>
+                </button>
+              </div>
+            </div>
+            <div v-if="genres.length" class="suggestion-group">
+              <p class="label">Popular genres</p>
+              <div class="suggestion-row">
+                <button
+                  v-for="genre in genres.slice(0, 8)"
+                  :key="genre.genre_id"
+                  class="suggestion-chip"
+                  @mousedown.prevent="applyGenre(genre)"
+                >
+                  {{ genre.name }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <button class="button" @click="load">Search</button>
         <button class="button ghost" @click="toggleFilters">
           {{ filtersOpen ? "Hide filters" : "Advanced filters" }}
@@ -90,7 +143,7 @@
 
     <div class="grid" v-if="movies.length">
       <article class="movie-card" v-for="movie in movies" :key="movie.movie_id">
-        <div class="poster" :style="posterStyle(movie)"></div>
+        <PosterImage :src="movie.poster_url" :alt="movie.title" />
         <div class="card-body">
           <div>
             <h3>{{ movie.title }}</h3>
@@ -104,6 +157,9 @@
       </article>
     </div>
     <p class="muted" v-else-if="!isLoading">No movies found. Try a different query.</p>
+    <div class="load-more" v-if="hasMore && !isLoading">
+      <button class="button secondary" @click="loadMore">Load more</button>
+    </div>
   </section>
 </template>
 
@@ -111,6 +167,7 @@
 import { ref, reactive, onMounted, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { api } from "../api.js";
+import PosterImage from "../components/PosterImage.vue";
 
 const route = useRoute();
 const movies = ref([]);
@@ -118,6 +175,14 @@ const genres = ref([]);
 const message = ref("");
 const isLoading = ref(true);
 const filtersOpen = ref(false);
+const showSuggestions = ref(false);
+const suggestions = ref([]);
+const history = ref([]);
+const page = ref(1);
+const hasMore = ref(false);
+const pageSize = 18;
+const historyKey = "filmrank.search.history";
+let suggestTimer;
 const filters = reactive({
   q: "",
   year: "",
@@ -150,20 +215,61 @@ function setSort(value) {
   load();
 }
 
-function posterStyle(movie) {
-  if (!movie.poster_url) {
-    return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
-  }
-  return { backgroundImage: `url(${movie.poster_url})` };
-}
-
 function formatScore(value) {
   if (value === null || value === undefined) return "--";
   const num = Number(value);
   return Number.isFinite(num) ? num.toFixed(1) : "--";
 }
 
-async function load() {
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(historyKey);
+    history.value = raw ? JSON.parse(raw) : [];
+  } catch {
+    history.value = [];
+  }
+}
+
+function saveHistory(term) {
+  const clean = term.trim();
+  if (!clean) return;
+  const next = [clean, ...history.value.filter((item) => item !== clean)].slice(0, 6);
+  history.value = next;
+  localStorage.setItem(historyKey, JSON.stringify(next));
+}
+
+function hideSuggestions() {
+  window.setTimeout(() => {
+    showSuggestions.value = false;
+  }, 150);
+}
+
+function applySearch(value) {
+  filters.q = value;
+  showSuggestions.value = false;
+  load();
+}
+
+function applyGenre(genre) {
+  filters.genreId = String(genre.genre_id);
+  showSuggestions.value = false;
+  load();
+}
+
+async function fetchSuggestions(value) {
+  if (!value || value.trim().length < 2) {
+    suggestions.value = [];
+    return;
+  }
+  try {
+    suggestions.value = await api.listMovies({ q: value.trim(), limit: 6 });
+  } catch {
+    suggestions.value = [];
+  }
+}
+
+async function load(options = {}) {
+  const { append = false } = options;
   message.value = "";
   isLoading.value = true;
   try {
@@ -176,11 +282,28 @@ async function load() {
     if (filters.minRuntime) params.min_runtime = filters.minRuntime;
     if (filters.maxRuntime) params.max_runtime = filters.maxRuntime;
     if (filters.sort) params.sort = filters.sort;
-    movies.value = await api.listMovies(params);
+    params.page_size = pageSize;
+    params.page = append ? page.value + 1 : 1;
+    const result = await api.listMovies(params);
+    if (append) {
+      movies.value = [...movies.value, ...result];
+      page.value += 1;
+    } else {
+      movies.value = result;
+      page.value = 1;
+    }
+    hasMore.value = result.length === pageSize;
+    saveHistory(filters.q);
   } catch (err) {
     message.value = err.message;
   } finally {
     isLoading.value = false;
+  }
+}
+
+function loadMore() {
+  if (hasMore.value && !isLoading.value) {
+    load({ append: true });
   }
 }
 
@@ -199,6 +322,7 @@ onMounted(() => {
   if (route.query.genre) {
     filters.genreId = String(route.query.genre);
   }
+  loadHistory();
   loadGenres();
   load();
 });
@@ -213,6 +337,14 @@ watch(
       filters.genreId = String(next.genre || "");
     }
     load();
+  }
+);
+
+watch(
+  () => filters.q,
+  (value) => {
+    clearTimeout(suggestTimer);
+    suggestTimer = window.setTimeout(() => fetchSuggestions(value), 300);
   }
 );
 </script>

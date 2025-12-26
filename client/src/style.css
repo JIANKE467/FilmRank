@@ -258,6 +258,71 @@ a {
   flex-wrap: wrap;
 }
 
+.search-box {
+  position: relative;
+  min-width: 260px;
+  flex: 1 1 320px;
+}
+
+.suggestion-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  z-index: 5;
+  display: grid;
+  gap: 12px;
+}
+
+.suggestion-group {
+  display: grid;
+  gap: 8px;
+}
+
+.suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+}
+
+.suggestion-list {
+  display: grid;
+  gap: 6px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(31, 26, 22, 0.03);
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  border-color: var(--border);
+  background: rgba(31, 26, 22, 0.05);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -273,6 +338,12 @@ a {
   background: var(--surface-strong);
   padding: 14px;
   box-shadow: var(--shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.movie-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 45px rgba(41, 29, 20, 0.18);
 }
 
 .card-body {
@@ -282,23 +353,47 @@ a {
   gap: 12px;
 }
 
-.poster {
+.poster-frame {
   width: 100%;
   aspect-ratio: 3 / 4;
   border-radius: 14px;
-  background-size: cover;
-  background-position: center;
   border: 1px solid var(--border);
+  overflow: hidden;
+  background: linear-gradient(135deg, #f5d2b8, #f1b58f);
+  position: relative;
 }
 
-.poster.large {
+.poster-frame.large {
   aspect-ratio: 2 / 3;
   max-width: 260px;
 }
 
-.poster.tiny {
+.poster-frame.tiny {
   width: 56px;
   aspect-ratio: 2 / 3;
+}
+
+.poster-img,
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.poster-placeholder {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900' viewBox='0 0 600 900'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f5d2b8'/><stop offset='1' stop-color='%23f1b58f'/></linearGradient></defs><rect width='600' height='900' fill='url(%23g)'/><rect x='48' y='60' width='504' height='780' rx='28' fill='white' opacity='0.55'/><text x='50%' y='46%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='40' fill='%237b2f1a'>FilmRank</text><text x='50%' y='52%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='20' fill='%237b6f66'>No poster available</text></svg>");
+  background-size: cover;
+  background-position: center;
+}
+
+.poster-img {
+  filter: saturate(1.05);
+  transition: transform 0.3s ease;
+}
+
+.movie-card:hover .poster-img {
+  transform: scale(1.02);
 }
 
 .card {
@@ -356,6 +451,14 @@ textarea {
   font-size: 14px;
   font-family: inherit;
   background: #fff;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(177, 84, 47, 0.6);
+  box-shadow: 0 0 0 3px rgba(177, 84, 47, 0.15);
 }
 
 textarea {
@@ -462,6 +565,12 @@ input[type="range"] {
   margin: 12px 0;
 }
 
+.rating-guide {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
 .split {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -528,6 +637,12 @@ input[type="range"] {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
 }
 
 .auth-page {
@@ -652,7 +767,7 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
-  .poster.large {
+  .poster-frame.large {
     max-width: 100%;
   }
 }
@@ -670,5 +785,13 @@ input[type="range"] {
 
   .hero-search {
     flex-direction: column;
+  }
+
+  .search-panel {
+    width: 100%;
+  }
+
+  .search-box {
+    width: 100%;
   }
 }

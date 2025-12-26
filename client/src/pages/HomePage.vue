@@ -44,7 +44,7 @@
       </div>
       <div class="grid" v-if="featured.length">
         <article class="movie-card" v-for="item in featured" :key="item.movie_id">
-          <div class="poster" :style="posterStyle(item)"></div>
+          <PosterImage :src="item.poster_url" :alt="item.title" />
           <div class="card-body">
             <div>
               <h3>{{ item.title }}</h3>
@@ -64,7 +64,7 @@
       </div>
       <div class="grid" v-if="hot.length">
         <article class="movie-card" v-for="movie in hot" :key="movie.movie_id">
-          <div class="poster" :style="posterStyle(movie)"></div>
+          <PosterImage :src="movie.poster_url" :alt="movie.title" />
           <div class="card-body">
             <div>
               <h3>{{ movie.title }}</h3>
@@ -87,7 +87,7 @@
       </div>
       <div class="grid" v-if="latest.length">
         <article class="movie-card" v-for="movie in latest" :key="movie.movie_id">
-          <div class="poster" :style="posterStyle(movie)"></div>
+          <PosterImage :src="movie.poster_url" :alt="movie.title" />
           <div class="card-body">
             <div>
               <h3>{{ movie.title }}</h3>
@@ -110,6 +110,7 @@ import { onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { api } from "../api.js";
 import useAuth from "../store/auth.js";
+import PosterImage from "../components/PosterImage.vue";
 
 const router = useRouter();
 const { isAuthed } = useAuth();
@@ -120,13 +121,6 @@ const hot = ref([]);
 const latest = ref([]);
 const genres = ref([]);
 const message = ref("");
-
-function posterStyle(item) {
-  if (!item.poster_url) {
-    return { backgroundImage: "linear-gradient(135deg, #f5d2b8, #f1b58f)" };
-  }
-  return { backgroundImage: `url(${item.poster_url})` };
-}
 
 function formatScore(value) {
   if (value === null || value === undefined) return "--";
