@@ -171,7 +171,6 @@
     <section class="section">
       <div class="section-head">
         <h2 class="section-title">相关推荐</h2>
-        <RouterLink class="link" to="/recommendations">查看更多</RouterLink>
       </div>
       <div class="grid" v-if="related.length">
         <article class="movie-card" v-for="item in related" :key="item.movie_id">

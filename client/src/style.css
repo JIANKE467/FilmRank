@@ -186,6 +186,19 @@ a {
 .hero-card.highlight {
   background: linear-gradient(135deg, rgba(33, 199, 168, 0.18), rgba(95, 182, 255, 0.2));
 }
+.hero-mini {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.hero-mini-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+}
+.hero-mini-info .muted {
+  font-size: 12px;
+}
 .hero-search {
   display: flex;
   gap: 12px;

@@ -132,3 +132,21 @@ export async function listTmdbCategory(category, language, page = 1) {
   const data = await tmdbRequest(path, { language, page: safePage });
   return Array.isArray(data.results) ? data.results : [];
 }
+
+export async function listTmdbTvCategory(category, language, page = 1) {
+  const map = {
+    on_the_air: "/tv/on_the_air",
+    airing_today: "/tv/airing_today",
+    popular: "/tv/popular",
+    top_rated: "/tv/top_rated"
+  };
+  const path = map[category];
+  if (!path) {
+    const err = new Error("invalid tmdb tv category");
+    err.status = 400;
+    throw err;
+  }
+  const safePage = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+  const data = await tmdbRequest(path, { language, page: safePage });
+  return Array.isArray(data.results) ? data.results : [];
+}

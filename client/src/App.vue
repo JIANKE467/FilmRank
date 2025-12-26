@@ -11,7 +11,6 @@
       <nav class="nav-links">
         <RouterLink to="/">首页</RouterLink>
         <RouterLink to="/search">搜索</RouterLink>
-        <RouterLink to="/recommendations">推荐</RouterLink>
         <RouterLink to="/profile">我的</RouterLink>
         <RouterLink v-if="isAdmin" to="/admin">管理</RouterLink>
         <RouterLink v-if="!isAuthed" to="/login">登录</RouterLink>

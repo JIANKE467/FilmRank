@@ -12,6 +12,7 @@ import recommendationRoutes from "./routes/recommendations.js";
 import adminRoutes from "./routes/admin.js";
 import userRoutes from "./routes/users.js";
 import bookmarkRoutes from "./routes/bookmarks.js";
+import tvRoutes from "./routes/tv.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/tv", tvRoutes);
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;

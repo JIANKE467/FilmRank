@@ -9,11 +9,6 @@
           <input v-model="query" class="input" placeholder="搜索电影、演员或类型" />
           <button class="button" @click="goSearch">搜索</button>
         </div>
-        <div class="hero-badges">
-          <span class="badge">精选片单</span>
-          <span class="badge">本周热门</span>
-          <span class="badge">高分回顾</span>
-        </div>
         <div class="chip-row">
           <button
             v-for="genre in genres"
@@ -29,13 +24,38 @@
         <div class="hero-card">
           <p class="eyebrow">今日</p>
           <h3>专属片单</h3>
-          <p class="muted">结合新鲜度与相似喜好，为你挑选。</p>
-          <RouterLink class="button secondary" to="/recommendations">查看推荐</RouterLink>
+          <p class="muted">每次进入都会随机挑选一部值得观看的电影。</p>
+          <div v-if="dailyPick" class="hero-mini">
+            <PosterImage :src="dailyPick.poster_url" :alt="dailyPick.title" size="tiny" />
+            <div class="hero-mini-info">
+              <h4>{{ dailyPick.title }}</h4>
+              <p class="muted">
+                {{ dailyPick.year || "-" }} / {{ dailyPick.language || "-" }}
+                <span v-if="dailyPick.tmdb_vote_average"> · 评分 {{ dailyPick.tmdb_vote_average }}</span>
+              </p>
+            </div>
+          </div>
+          <p v-else class="muted">暂无推荐，请稍后再试。</p>
         </div>
         <div class="hero-card highlight">
           <p class="eyebrow">热映</p>
           <h3>当前热门</h3>
-          <p class="muted">FilmRank 社区里最受关注的影片。</p>
+          <p class="muted">自动轮播展示本周最受关注的影片。</p>
+          <div v-if="hotSpotlights.length" class="hero-mini">
+            <PosterImage
+              :src="hotSpotlights[hotSpotlightIndex]?.poster_url"
+              :alt="hotSpotlights[hotSpotlightIndex]?.title"
+              size="tiny"
+            />
+            <div class="hero-mini-info">
+              <h4>{{ hotSpotlights[hotSpotlightIndex]?.title }}</h4>
+              <p class="muted">
+                {{ hotSpotlights[hotSpotlightIndex]?.year || "-" }} /
+                {{ hotSpotlights[hotSpotlightIndex]?.language || "-" }}
+              </p>
+            </div>
+          </div>
+          <p v-else class="muted">暂无热映数据。</p>
         </div>
       </div>
     </div>
@@ -44,38 +64,7 @@
 
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title">精选推荐</h2>
-        <RouterLink class="link" to="/recommendations">查看全部</RouterLink>
-      </div>
-      <div class="grid" v-if="featured.length">
-        <article class="movie-card" v-for="item in featured" :key="item.movie_id">
-          <PosterImage :src="item.poster_url" :alt="item.title" />
-          <div class="card-body">
-            <div>
-              <h3>{{ item.title }}</h3>
-              <p class="muted">{{ item.reason || "为你精选" }}</p>
-            </div>
-            <RouterLink class="button secondary" :to="`/movies/${item.movie_id}`">详情</RouterLink>
-          </div>
-        </article>
-      </div>
-      <div class="pager-numbers" v-if="useFeaturedTmdb && featuredPages.length">
-        <button
-          v-for="page in featuredPages"
-          :key="page"
-          class="page-number"
-          :class="{ active: featuredPage === page }"
-          @click="setFeaturedPage(page)"
-        >
-          {{ page }}
-        </button>
-      </div>
-      <p class="muted" v-else>暂无推荐。</p>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">热门影片</h2>
+        <h2 class="section-title">本周热映</h2>
         <RouterLink class="link" to="/search">浏览全部</RouterLink>
       </div>
       <div class="grid" v-if="hot.length">
@@ -106,92 +95,68 @@
 
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title">最新上映</h2>
-        <RouterLink class="link" to="/search">查看更多</RouterLink>
+        <h2 class="section-title">电视播出</h2>
+        <a class="link" href="https://www.themoviedb.org/tv" target="_blank" rel="noopener">
+          浏览全部
+        </a>
       </div>
-      <div class="grid" v-if="latest.length">
-        <article class="movie-card" v-for="movie in latest" :key="movie.movie_id">
-          <PosterImage :src="movie.poster_url" :alt="movie.title" />
+      <div class="grid" v-if="tvShows.length">
+        <article class="movie-card" v-for="show in tvShows" :key="show.tmdb_id">
+          <PosterImage :src="show.poster_url" :alt="show.title" />
           <div class="card-body">
             <div>
-              <h3>{{ movie.title }}</h3>
-              <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
+              <h3>{{ show.title }}</h3>
+              <p class="muted">{{ show.year || "-" }} / {{ show.language || "-" }}</p>
             </div>
-            <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">详情</RouterLink>
+            <a
+              class="button secondary"
+              :href="`https://www.themoviedb.org/tv/${show.tmdb_id}`"
+              target="_blank"
+              rel="noopener"
+            >
+              详情
+            </a>
           </div>
         </article>
       </div>
-      <div class="pager-numbers" v-if="latestPages.length">
+      <div class="pager-numbers" v-if="tvPages.length">
         <button
-          v-for="page in latestPages"
+          v-for="page in tvPages"
           :key="page"
           class="page-number"
-          :class="{ active: latestPage === page }"
-          @click="setLatestPage(page)"
+          :class="{ active: tvPage === page }"
+          @click="setTvPage(page)"
         >
           {{ page }}
         </button>
       </div>
-      <p class="muted" v-else>暂无影片。</p>
+      <p class="muted" v-else>暂无节目。</p>
     </section>
   </section>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { api } from "../api.js";
-import useAuth from "../store/auth.js";
 import PosterImage from "../components/PosterImage.vue";
 
 const router = useRouter();
-const { isAuthed } = useAuth();
 
 const query = ref("");
-const featured = ref([]);
 const hot = ref([]);
-const latest = ref([]);
+const tvShows = ref([]);
 const genres = ref([]);
 const message = ref("");
+const dailyPick = ref(null);
+const hotSpotlights = ref([]);
+const hotSpotlightIndex = ref(0);
 const pageSize = 6;
-const featuredPage = ref(1);
 const hotPage = ref(1);
-const latestPage = ref(1);
-const useFeaturedTmdb = ref(true);
-const featuredPages = [1, 2, 3, 4, 5];
+const tvPage = ref(1);
 const hotPages = [1, 2, 3, 4, 5];
-const latestPages = [1, 2, 3, 4, 5];
-
-function getMovieKey(movie) {
-  if (!movie) return null;
-  if (movie.tmdb_id) return `t:${movie.tmdb_id}`;
-  if (movie.movie_id) return `m:${movie.movie_id}`;
-  if (movie.id) return `t:${movie.id}`;
-  return null;
-}
-
-function pickUnique(source, used, limit) {
-  const result = [];
-  for (const item of source || []) {
-    const key = getMovieKey(item);
-    if (!key || used.has(key)) continue;
-    used.add(key);
-    result.push(item);
-    if (result.length >= limit) break;
-  }
-  return result;
-}
-
-function fillWithFallback(source, used, limit) {
-  const unique = pickUnique(source, used, limit);
-  if (unique.length >= limit) return unique;
-  const fallback = [];
-  for (const item of source || []) {
-    fallback.push(item);
-    if (fallback.length >= limit - unique.length) break;
-  }
-  return unique.concat(fallback);
-}
+const tvPages = [1, 2, 3, 4, 5];
+let spotlightTimer;
 
 function goSearch() {
   router.push({ path: "/search", query: query.value ? { q: query.value } : {} });
@@ -204,50 +169,27 @@ function goGenre(id) {
 async function load() {
   message.value = "";
   try {
-    const [featuredTmdb, hotTmdb, latestTmdb, genreList] = await Promise.all([
-      api.listTmdbCategory("popular", { limit: pageSize, page: featuredPage.value }),
+    const [hotTmdb, tvTmdb, genreList] = await Promise.all([
       api.listTmdbCategory("trending_week", { limit: pageSize, page: hotPage.value }),
-      api.listTmdbCategory("now_playing", { limit: pageSize, page: latestPage.value }),
+      api.listTmdbTvCategory("on_the_air", { limit: pageSize, page: tvPage.value }),
       api.listGenres()
     ]);
     genres.value = (genreList || []).slice(0, 8);
-    const used = new Set();
-
-    if (isAuthed.value) {
-      const data = await api.listRecommendations();
-      if ((data.items || []).length) {
-        const featuredBase = (data.items || []).slice(0, 6);
-        let featuredUnique = pickUnique(featuredBase, used, 6);
-        if (featuredUnique.length < 6) {
-          featuredUnique = featuredUnique.concat(
-            pickUnique(featuredTmdb || [], used, 6 - featuredUnique.length)
-          );
-        }
-        featured.value = featuredUnique;
-        useFeaturedTmdb.value = false;
-      } else {
-        featured.value = fillWithFallback(featuredTmdb || [], used, 6);
-        useFeaturedTmdb.value = true;
-      }
+    hot.value = (hotTmdb || []).slice(0, 6);
+    tvShows.value = (tvTmdb || []).slice(0, 6);
+    const hotCandidates = (hotTmdb || []).slice(0, 10);
+    if (hotCandidates.length) {
+      dailyPick.value = hotCandidates[Math.floor(Math.random() * hotCandidates.length)];
+      hotSpotlights.value = hotCandidates.slice(0, 6);
+      hotSpotlightIndex.value = 0;
+      startSpotlightRotation();
     } else {
-      const featuredUnique = fillWithFallback(featuredTmdb || [], used, 6).map((movie) => ({
-        ...movie,
-        reason: "登录以获取专属推荐"
-      }));
-      featured.value = featuredUnique;
-      useFeaturedTmdb.value = true;
+      dailyPick.value = null;
+      hotSpotlights.value = [];
+      stopSpotlightRotation();
     }
-    hot.value = fillWithFallback(hotTmdb || [], used, 6);
-    latest.value = fillWithFallback(latestTmdb || [], used, 6);
   } catch (err) {
     message.value = err.message;
-  }
-}
-
-function setFeaturedPage(page) {
-  if (featuredPage.value !== page) {
-    featuredPage.value = page;
-    load();
   }
 }
 
@@ -258,13 +200,31 @@ function setHotPage(page) {
   }
 }
 
-function setLatestPage(page) {
-  if (latestPage.value !== page) {
-    latestPage.value = page;
+function setTvPage(page) {
+  if (tvPage.value !== page) {
+    tvPage.value = page;
     load();
   }
 }
 
+function startSpotlightRotation() {
+  stopSpotlightRotation();
+  if (hotSpotlights.value.length > 1) {
+    spotlightTimer = setInterval(() => {
+      hotSpotlightIndex.value =
+        (hotSpotlightIndex.value + 1) % hotSpotlights.value.length;
+    }, 3500);
+  }
+}
+
+function stopSpotlightRotation() {
+  if (spotlightTimer) {
+    clearInterval(spotlightTimer);
+    spotlightTimer = null;
+  }
+}
+
 onMounted(load);
+onBeforeUnmount(stopSpotlightRotation);
 </script>
 

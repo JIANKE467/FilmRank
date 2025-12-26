@@ -4,7 +4,7 @@
       <div>
         <p class="eyebrow">个人中心</p>
         <h1>个人仪表盘</h1>
-        <p class="muted">查看书签与推荐内容。</p>
+        <p class="muted">查看书签与收藏内容。</p>
       </div>
       <div class="profile-actions">
         <button class="button" :disabled="!isAuthed" @click="toggleEdit">
@@ -19,7 +19,7 @@
 
     <div v-if="!isAuthed" class="card">
       <h3>登录后完善个人信息</h3>
-      <p class="muted">登录查看收藏与推荐内容。</p>
+      <p class="muted">登录查看收藏与书签内容。</p>
     </div>
 
     <div v-else class="profile-grid">

@@ -37,6 +37,10 @@ export const api = {
     const qs = new URLSearchParams({ ...params, tmdb_category: category }).toString();
     return request(`/api/movies?${qs}`);
   },
+  listTmdbTvCategory: (category, params = {}) => {
+    const qs = new URLSearchParams({ ...params, category }).toString();
+    return request(`/api/tv?${qs}`);
+  },
   getMovie: (id) => request(`/api/movies/${id}`),
   listGenres: () => request("/api/genres"),
   saveBookmark: (payload) => request("/api/bookmarks", { method: "POST", body: JSON.stringify(payload) }),
@@ -49,7 +53,6 @@ export const api = {
   createReview: (payload) => request("/api/reviews", { method: "POST", body: JSON.stringify(payload) }),
   updateReview: (id, payload) => request(`/api/reviews/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteReview: (id) => request(`/api/reviews/${id}`, { method: "DELETE" }),
-  listRecommendations: (algorithm) => request(`/api/recommendations${algorithm ? `?algorithm=${algorithm}` : ""}`),
   startWatch: (payload) => request("/api/watch", { method: "POST", body: JSON.stringify(payload) }),
   listWatchHistory: () => request("/api/watch/history"),
   getUserStats: () => request("/api/users/me/stats"),

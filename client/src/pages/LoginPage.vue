@@ -2,7 +2,7 @@
   <section class="page auth-page">
     <div class="card auth-card">
       <h1>欢迎回来</h1>
-      <p class="muted">登录后查看推荐与个人资料。</p>
+      <p class="muted">登录后查看个人资料。</p>
       <div class="form-stack">
         <input v-model="username" class="input" placeholder="用户名" />
         <input v-model="password" class="input" type="password" placeholder="密码" />
