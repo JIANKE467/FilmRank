@@ -5,18 +5,18 @@
         <span class="brand-mark">FR</span>
         <div>
           <div class="brand-title">FilmRank</div>
-          <div class="brand-subtitle">Discover. Rate. Recommend.</div>
+          <div class="brand-subtitle">发现 · 收藏 · 推荐</div>
         </div>
       </div>
       <nav class="nav-links">
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/search">Search</RouterLink>
-        <RouterLink to="/recommendations">Recommendations</RouterLink>
-        <RouterLink to="/profile">Profile</RouterLink>
-        <RouterLink v-if="isAdmin" to="/admin">Admin</RouterLink>
-        <RouterLink v-if="!isAuthed" to="/login">Login</RouterLink>
-        <RouterLink v-if="!isAuthed" to="/register">Register</RouterLink>
-        <button v-if="isAuthed" class="button secondary" @click="logout">Logout</button>
+        <RouterLink to="/">首页</RouterLink>
+        <RouterLink to="/search">搜索</RouterLink>
+        <RouterLink to="/recommendations">推荐</RouterLink>
+        <RouterLink to="/profile">我的</RouterLink>
+        <RouterLink v-if="isAdmin" to="/admin">管理</RouterLink>
+        <RouterLink v-if="!isAuthed" to="/login">登录</RouterLink>
+        <RouterLink v-if="!isAuthed" to="/register">注册</RouterLink>
+        <button v-if="isAuthed" class="button secondary" @click="logout">退出</button>
       </nav>
     </header>
     <main class="container">
@@ -26,12 +26,12 @@
       <div class="footer-content">
         <div>
           <div class="footer-title">FilmRank</div>
-          <p class="muted">A curated hub for discovering and reviewing films.</p>
+          <p class="muted">发现、收藏与推荐电影的精选空间。</p>
         </div>
         <div class="footer-links">
           <span>Copyright (c) 2025 FilmRank</span>
-          <span>Privacy</span>
-          <span>Terms</span>
+          <span>隐私</span>
+          <span>条款</span>
         </div>
       </div>
     </footer>

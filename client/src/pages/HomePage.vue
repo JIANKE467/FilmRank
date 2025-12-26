@@ -2,12 +2,12 @@
   <section class="page">
     <div class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">FilmRank Homepage</p>
-        <h1>Curated films, tailored to your next watch.</h1>
-        <p class="muted">Search by title, genre, or language. Dive into trending picks and personalized lists.</p>
+        <p class="eyebrow">FilmRank 首页</p>
+        <h1>精选电影，为你的下一次观影量身定制。</h1>
+        <p class="muted">按片名、类型或语言搜索，发现热门与个性化片单。</p>
         <div class="hero-search">
-          <input v-model="query" class="input" placeholder="Search movies, actors, or genres" />
-          <button class="button" @click="goSearch">Search</button>
+          <input v-model="query" class="input" placeholder="搜索电影、演员或类型" />
+          <button class="button" @click="goSearch">搜索</button>
         </div>
         <div class="chip-row">
           <button
@@ -22,15 +22,15 @@
       </div>
       <div class="hero-panel">
         <div class="hero-card">
-          <p class="eyebrow">Today</p>
-          <h3>Personal mix</h3>
-          <p class="muted">A blend of recency, ratings, and what people with similar tastes love.</p>
-          <RouterLink class="button secondary" to="/recommendations">Open recommendations</RouterLink>
+          <p class="eyebrow">今日</p>
+          <h3>专属片单</h3>
+          <p class="muted">结合新鲜度与相似喜好，为你挑选。</p>
+          <RouterLink class="button secondary" to="/recommendations">查看推荐</RouterLink>
         </div>
         <div class="hero-card highlight">
-          <p class="eyebrow">Live</p>
-          <h3>Hot right now</h3>
-          <p class="muted">The most watched titles in the FilmRank community.</p>
+          <p class="eyebrow">热映</p>
+          <h3>当前热门</h3>
+          <p class="muted">FilmRank 社区里最受关注的影片。</p>
         </div>
       </div>
     </div>
@@ -39,8 +39,8 @@
 
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title">Featured recommendations</h2>
-        <RouterLink class="link" to="/recommendations">See all</RouterLink>
+        <h2 class="section-title">精选推荐</h2>
+        <RouterLink class="link" to="/recommendations">查看全部</RouterLink>
       </div>
       <div class="grid" v-if="featured.length">
         <article class="movie-card" v-for="item in featured" :key="item.movie_id">
@@ -48,19 +48,19 @@
           <div class="card-body">
             <div>
               <h3>{{ item.title }}</h3>
-              <p class="muted">{{ item.reason || "Picked for you" }}</p>
+              <p class="muted">{{ item.reason || "为你精选" }}</p>
             </div>
-            <RouterLink class="button secondary" :to="`/movies/${item.movie_id}`">Details</RouterLink>
+            <RouterLink class="button secondary" :to="`/movies/${item.movie_id}`">详情</RouterLink>
           </div>
         </article>
       </div>
-      <p class="muted" v-else>No recommendations yet.</p>
+      <p class="muted" v-else>暂无推荐。</p>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title">Hot movies</h2>
-        <RouterLink class="link" to="/search">Browse all</RouterLink>
+        <h2 class="section-title">热门影片</h2>
+        <RouterLink class="link" to="/search">浏览全部</RouterLink>
       </div>
       <div class="grid" v-if="hot.length">
         <article class="movie-card" v-for="movie in hot" :key="movie.movie_id">
@@ -69,21 +69,18 @@
             <div>
               <h3>{{ movie.title }}</h3>
               <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
-              <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
-                Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
-              </p>
             </div>
-            <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">Details</RouterLink>
+            <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">详情</RouterLink>
           </div>
         </article>
       </div>
-      <p class="muted" v-else>No movies loaded yet.</p>
+      <p class="muted" v-else>暂无影片。</p>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title">Fresh arrivals</h2>
-        <RouterLink class="link" to="/search">Search more</RouterLink>
+        <h2 class="section-title">最新上映</h2>
+        <RouterLink class="link" to="/search">查看更多</RouterLink>
       </div>
       <div class="grid" v-if="latest.length">
         <article class="movie-card" v-for="movie in latest" :key="movie.movie_id">
@@ -92,15 +89,12 @@
             <div>
               <h3>{{ movie.title }}</h3>
               <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
-              <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
-                Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
-              </p>
             </div>
-            <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">Details</RouterLink>
+            <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">详情</RouterLink>
           </div>
         </article>
       </div>
-      <p class="muted" v-else>No movies loaded yet.</p>
+      <p class="muted" v-else>暂无影片。</p>
     </section>
   </section>
 </template>
@@ -121,12 +115,6 @@ const hot = ref([]);
 const latest = ref([]);
 const genres = ref([]);
 const message = ref("");
-
-function formatScore(value) {
-  if (value === null || value === undefined) return "--";
-  const num = Number(value);
-  return Number.isFinite(num) ? num.toFixed(1) : "--";
-}
 
 function goSearch() {
   router.push({ path: "/search", query: query.value ? { q: query.value } : {} });
@@ -154,7 +142,7 @@ async function load() {
     } else {
       featured.value = (movies || []).slice(0, 6).map((movie) => ({
         ...movie,
-        reason: "Sign in for personalized picks"
+        reason: "登录以获取专属推荐"
       }));
     }
   } catch (err) {

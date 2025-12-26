@@ -12,6 +12,11 @@ function setAuth(token, user) {
   localStorage.setItem("user", JSON.stringify(user));
 }
 
+function updateUser(user) {
+  state.user = user;
+  localStorage.setItem("user", JSON.stringify(user));
+}
+
 function clearAuth() {
   state.token = "";
   state.user = null;
@@ -23,5 +28,5 @@ const isAuthed = computed(() => !!state.token);
 const isAdmin = computed(() => state.user && state.user.role === "admin");
 
 export default function useAuth() {
-  return { state, setAuth, clearAuth, isAuthed, isAdmin };
+  return { state, setAuth, updateUser, clearAuth, isAuthed, isAdmin };
 }

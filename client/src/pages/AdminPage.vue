@@ -2,12 +2,12 @@
   <section class="page">
     <div class="page-hero compact">
       <div>
-        <p class="eyebrow">Admin Console</p>
-        <h1>Manage the FilmRank catalog</h1>
-        <p class="muted">Moderate users, update movies, and generate recommendation batches.</p>
+        <p class="eyebrow">管理控制台</p>
+        <h1>管理 FilmRank 影片库</h1>
+        <p class="muted">用户管理、影片维护与推荐批次生成。</p>
       </div>
       <div class="profile-actions">
-        <button class="button" @click="loadUsers">Refresh users</button>
+        <button class="button" @click="loadUsers">刷新用户</button>
       </div>
     </div>
 
@@ -15,96 +15,96 @@
 
     <div class="admin-grid">
       <div class="card">
-        <h3>Movie management</h3>
+        <h3>影片管理</h3>
         <div class="form-stack">
-          <input v-model="movieTitle" class="input" placeholder="Title" />
-          <input v-model="movieYear" class="input" placeholder="Year" />
-          <input v-model="movieLanguage" class="input" placeholder="Language" />
-          <input v-model="moviePoster" class="input" placeholder="Poster URL" />
-          <textarea v-model="movieDescription" class="input" rows="3" placeholder="Description"></textarea>
-          <button class="button" @click="createMovie">Create movie</button>
+          <input v-model="movieTitle" class="input" placeholder="片名" />
+          <input v-model="movieYear" class="input" placeholder="年份" />
+          <input v-model="movieLanguage" class="input" placeholder="语言" />
+          <input v-model="moviePoster" class="input" placeholder="海报链接" />
+          <textarea v-model="movieDescription" class="input" rows="3" placeholder="简介"></textarea>
+          <button class="button" @click="createMovie">创建影片</button>
         </div>
         <div class="divider"></div>
         <div class="form-stack">
-          <input v-model="updateMovieId" class="input" placeholder="Movie ID" />
-          <input v-model="updateTitle" class="input" placeholder="New title" />
-          <input v-model="updateYear" class="input" placeholder="New year" />
-          <button class="button secondary" @click="updateMovie">Update movie</button>
+          <input v-model="updateMovieId" class="input" placeholder="影片 ID" />
+          <input v-model="updateTitle" class="input" placeholder="新片名" />
+          <input v-model="updateYear" class="input" placeholder="新年份" />
+          <button class="button secondary" @click="updateMovie">更新影片</button>
         </div>
         <div class="divider"></div>
         <div class="form-stack">
-          <input v-model="bindMovieId" class="input" placeholder="Movie ID" />
-          <input v-model="bindGenres" class="input" placeholder="Genre IDs (comma-separated)" />
-          <button class="button secondary" @click="bindMovieGenres">Bind genres</button>
+          <input v-model="bindMovieId" class="input" placeholder="影片 ID" />
+          <input v-model="bindGenres" class="input" placeholder="类型 ID（逗号分隔）" />
+          <button class="button secondary" @click="bindMovieGenres">绑定类型</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>User management</h3>
+        <h3>用户管理</h3>
         <div class="form-row">
-          <input v-model="userQuery" class="input" placeholder="Search username/email" />
-          <button class="button" @click="loadUsers">Search</button>
+          <input v-model="userQuery" class="input" placeholder="搜索用户名/邮箱" />
+          <button class="button" @click="loadUsers">搜索</button>
         </div>
         <div class="stack" v-if="users.length">
           <div v-for="user in users" :key="user.user_id" class="list-row">
             <div>
               <p class="list-title">{{ user.username }}</p>
-              <p class="muted">{{ user.email || "No email" }}</p>
+              <p class="muted">{{ user.email || "未填写邮箱" }}</p>
             </div>
             <button class="button ghost" @click="toggleUser(user)">
-              {{ user.status === "active" ? "Ban" : "Unban" }}
+              {{ user.status === "active" ? "禁用" : "解禁" }}
             </button>
           </div>
         </div>
-        <p v-else class="muted">No users loaded.</p>
+        <p v-else class="muted">暂无用户。</p>
       </div>
 
       <div class="card">
-        <h3>Review moderation</h3>
+        <h3>评论审核</h3>
         <div class="form-stack">
-          <input v-model="reviewId" class="input" placeholder="Review ID" />
+          <input v-model="reviewId" class="input" placeholder="评论 ID" />
           <select v-model="reviewStatus" class="input">
-            <option value="visible">Visible</option>
-            <option value="hidden">Hidden</option>
+            <option value="visible">显示</option>
+            <option value="hidden">隐藏</option>
           </select>
-          <button class="button" @click="updateReviewStatus">Apply status</button>
+          <button class="button" @click="updateReviewStatus">应用</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>Genre management</h3>
+        <h3>类型管理</h3>
         <div class="form-row">
-          <input v-model="genreName" class="input" placeholder="Genre name" />
-          <button class="button" @click="createGenre">Create</button>
+          <input v-model="genreName" class="input" placeholder="类型名称" />
+          <button class="button" @click="createGenre">创建</button>
         </div>
         <div class="form-row">
-          <input v-model="genreId" class="input" placeholder="Genre ID" />
-          <input v-model="genreUpdate" class="input" placeholder="New name" />
-          <button class="button secondary" @click="updateGenre">Update</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Rating policy</h3>
-        <div class="form-row">
-          <input v-model="policyMin" class="input" placeholder="Min score" />
-          <input v-model="policyMax" class="input" placeholder="Max score" />
-          <input v-model="policyStep" class="input" placeholder="Step" />
-          <button class="button" @click="updatePolicy">Apply</button>
+          <input v-model="genreId" class="input" placeholder="类型 ID" />
+          <input v-model="genreUpdate" class="input" placeholder="新名称" />
+          <button class="button secondary" @click="updateGenre">更新</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>Generate recommendations</h3>
+        <h3>评分策略</h3>
+        <div class="form-row">
+          <input v-model="policyMin" class="input" placeholder="最小分" />
+          <input v-model="policyMax" class="input" placeholder="最大分" />
+          <input v-model="policyStep" class="input" placeholder="步长" />
+          <button class="button" @click="updatePolicy">应用</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>生成推荐</h3>
         <div class="form-row">
           <select v-model="algo" class="input" style="max-width: 200px;">
-            <option value="hot">Hot</option>
-            <option value="content">Content</option>
+            <option value="hot">热门</option>
+            <option value="content">内容</option>
             <option value="cf">CF</option>
-            <option value="hybrid">Hybrid</option>
+            <option value="hybrid">混合</option>
           </select>
-          <input v-model="topN" class="input" placeholder="Top N" />
-          <button class="button" @click="generate">Generate</button>
+          <input v-model="topN" class="input" placeholder="数量" />
+          <button class="button" @click="generate">生成</button>
         </div>
       </div>
     </div>
@@ -157,7 +157,7 @@ async function createMovie() {
       poster_url: moviePoster.value || null,
       description: movieDescription.value || null
     });
-    message.value = "Movie created";
+    message.value = "影片已创建";
     movieTitle.value = "";
     movieYear.value = "";
     movieLanguage.value = "";
@@ -175,7 +175,7 @@ async function updateMovie() {
       title: updateTitle.value || undefined,
       year: updateYear.value || undefined
     });
-    message.value = "Movie updated";
+    message.value = "影片已更新";
     updateMovieId.value = "";
     updateTitle.value = "";
     updateYear.value = "";
@@ -192,7 +192,7 @@ async function bindMovieGenres() {
       .map((id) => Number(id.trim()))
       .filter((id) => Number.isFinite(id));
     await api.admin.bindGenres(bindMovieId.value, { genre_ids: ids });
-    message.value = "Genres bound";
+    message.value = "类型已绑定";
     bindMovieId.value = "";
     bindGenres.value = "";
   } catch (err) {
@@ -204,7 +204,7 @@ async function createGenre() {
   message.value = "";
   try {
     await api.admin.createGenre({ name: genreName.value });
-    message.value = "Genre created";
+    message.value = "类型已创建";
     genreName.value = "";
   } catch (err) {
     message.value = err.message;
@@ -215,7 +215,7 @@ async function updateGenre() {
   message.value = "";
   try {
     await api.admin.updateGenre(genreId.value, { name: genreUpdate.value });
-    message.value = "Genre updated";
+    message.value = "类型已更新";
     genreId.value = "";
     genreUpdate.value = "";
   } catch (err) {
@@ -232,7 +232,7 @@ async function updatePolicy() {
       step: Number(policyStep.value),
       allow_update: true
     });
-    message.value = "Policy updated";
+    message.value = "评分策略已更新";
   } catch (err) {
     message.value = err.message;
   }
@@ -242,7 +242,7 @@ async function generate() {
   message.value = "";
   try {
     await api.admin.generateBatch({ algorithm: algo.value, top_n: Number(topN.value) });
-    message.value = "Batch generated";
+    message.value = "推荐批次已生成";
   } catch (err) {
     message.value = err.message;
   }
@@ -272,7 +272,7 @@ async function updateReviewStatus() {
   message.value = "";
   try {
     await api.admin.setReviewStatus(reviewId.value, reviewStatus.value);
-    message.value = "Review status updated";
+    message.value = "评论状态已更新";
     reviewId.value = "";
   } catch (err) {
     message.value = err.message;

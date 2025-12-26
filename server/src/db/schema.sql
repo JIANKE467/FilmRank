@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NULL,
   password_hash VARCHAR(255) NOT NULL,
+  bio VARCHAR(500) NULL,
   role ENUM('user','admin') DEFAULT 'user',
   status ENUM('active','banned') DEFAULT 'active',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -24,6 +25,10 @@ CREATE TABLE IF NOT EXISTS movies (
   country VARCHAR(50) NULL,
   description TEXT NULL,
   poster_url VARCHAR(500) NULL,
+  backdrop_url VARCHAR(500) NULL,
+  tmdb_vote_average DECIMAL(3,1) NULL,
+  tmdb_vote_count INT NULL,
+  tmdb_revenue BIGINT NULL,
   source ENUM('local','tmdb') DEFAULT 'local',
   last_fetched_at DATETIME NULL,
   status ENUM('active','inactive') DEFAULT 'active',
@@ -50,6 +55,38 @@ CREATE TABLE IF NOT EXISTS movie_genres (
   CONSTRAINT fk_movie_genres_genre FOREIGN KEY (genre_id) REFERENCES genres(genre_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS movie_keywords (
+  movie_id BIGINT NOT NULL,
+  keyword_id BIGINT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  PRIMARY KEY (movie_id, keyword_id),
+  INDEX idx_movie_keywords_name(name),
+  CONSTRAINT fk_movie_keywords_movie FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS movie_cast (
+  movie_id BIGINT NOT NULL,
+  cast_id BIGINT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  character_name VARCHAR(200) NULL,
+  profile_url VARCHAR(500) NULL,
+  cast_order INT NULL,
+  PRIMARY KEY (movie_id, cast_id),
+  INDEX idx_movie_cast_order(movie_id, cast_order),
+  CONSTRAINT fk_movie_cast_movie FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS movie_crew (
+  movie_id BIGINT NOT NULL,
+  crew_id BIGINT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  job VARCHAR(100) NULL,
+  profile_url VARCHAR(500) NULL,
+  PRIMARY KEY (movie_id, crew_id),
+  INDEX idx_movie_crew_job(movie_id, job),
+  CONSTRAINT fk_movie_crew_movie FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS rating_policy (
   policy_id INT PRIMARY KEY AUTO_INCREMENT,
   min_score DECIMAL(3,1) NOT NULL,
@@ -60,18 +97,17 @@ CREATE TABLE IF NOT EXISTS rating_policy (
   is_active BOOLEAN DEFAULT TRUE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS ratings (
-  rating_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS bookmarks (
+  bookmark_id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   movie_id BIGINT NOT NULL,
-  score DECIMAL(3,1) NOT NULL,
-  rated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  note VARCHAR(500) NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_user_movie(user_id, movie_id),
-  INDEX idx_ratings_user(user_id, rated_at),
-  INDEX idx_ratings_movie(movie_id, score),
-  CONSTRAINT fk_ratings_user FOREIGN KEY (user_id) REFERENCES users(user_id),
-  CONSTRAINT fk_ratings_movie FOREIGN KEY (movie_id) REFERENCES movies(movie_id)
+  UNIQUE KEY uniq_user_bookmark(user_id, movie_id),
+  INDEX idx_bookmarks_user(user_id, created_at),
+  CONSTRAINT fk_bookmarks_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+  CONSTRAINT fk_bookmarks_movie FOREIGN KEY (movie_id) REFERENCES movies(movie_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS reviews (

@@ -1,15 +1,15 @@
 ﻿<template>
   <section class="page auth-page">
     <div class="card auth-card">
-      <h1>Welcome back</h1>
-      <p class="muted">Log in to access recommendations and your profile.</p>
+      <h1>欢迎回来</h1>
+      <p class="muted">登录后查看推荐与个人资料。</p>
       <div class="form-stack">
-        <input v-model="username" class="input" placeholder="Username" />
-        <input v-model="password" class="input" type="password" placeholder="Password" />
-        <button class="button" @click="submit">Login</button>
+        <input v-model="username" class="input" placeholder="用户名" />
+        <input v-model="password" class="input" type="password" placeholder="密码" />
+        <button class="button" @click="submit">登录</button>
       </div>
       <p class="muted" v-if="message">{{ message }}</p>
-      <RouterLink class="link" to="/register">Need an account? Register</RouterLink>
+      <RouterLink class="link" to="/register">还没有账号？去注册</RouterLink>
     </div>
   </section>
 </template>

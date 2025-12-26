@@ -1,5 +1,15 @@
 import pool from "../db/pool.js";
-import { searchTmdbMovies, getTmdbGenreMap, buildTmdbPosterUrl } from "../services/tmdb.js";
+import {
+  searchTmdbMovies,
+  getTmdbGenreMap,
+  buildTmdbPosterUrl,
+  buildTmdbBackdropUrl,
+  buildTmdbProfileUrl,
+  getTmdbMovieDetails,
+  getTmdbMovieCredits,
+  getTmdbMovieKeywords,
+  getTmdbMovieReviews
+} from "../services/tmdb.js";
 
 const DEFAULT_TMDB_CACHE_DAYS = 30;
 
@@ -71,35 +81,49 @@ async function upsertTmdbMovies(tmdbMovies, language) {
     const releaseDate = movie.release_date || null;
     const year = releaseDate ? Number(releaseDate.slice(0, 4)) : null;
     const posterUrl = buildTmdbPosterUrl(movie.poster_path);
-    const [result] = await pool.query(
-      `INSERT INTO movies
-        (tmdb_id, title, original_title, release_date, year, runtime_minutes, language, country, description, poster_url, source, last_fetched_at, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'tmdb', ?, 'active')
-       ON DUPLICATE KEY UPDATE
-         title = VALUES(title),
-         original_title = VALUES(original_title),
-         release_date = VALUES(release_date),
-         year = VALUES(year),
-         language = VALUES(language),
-         description = VALUES(description),
-         poster_url = VALUES(poster_url),
-         last_fetched_at = VALUES(last_fetched_at),
-         status = 'active',
-         movie_id = LAST_INSERT_ID(movie_id)`,
-      [
-        movie.id,
-        movie.title || movie.original_title || "Unknown",
-        movie.original_title || null,
-        releaseDate,
-        Number.isFinite(year) ? year : null,
-        null,
-        movie.original_language || null,
-        null,
-        movie.overview || null,
-        posterUrl,
-        now
-      ]
-    );
+    const backdropUrl = buildTmdbBackdropUrl(movie.backdrop_path);
+    let result;
+    try {
+      [result] = await pool.query(
+        `INSERT INTO movies
+          (tmdb_id, title, original_title, release_date, year, runtime_minutes, language, country, description, poster_url, backdrop_url, tmdb_vote_average, tmdb_vote_count, tmdb_revenue, source, last_fetched_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'tmdb', ?, 'active')
+         ON DUPLICATE KEY UPDATE
+           title = VALUES(title),
+           original_title = VALUES(original_title),
+           release_date = VALUES(release_date),
+           year = VALUES(year),
+           language = VALUES(language),
+           description = VALUES(description),
+           poster_url = VALUES(poster_url),
+           backdrop_url = VALUES(backdrop_url),
+           tmdb_vote_average = VALUES(tmdb_vote_average),
+           tmdb_vote_count = VALUES(tmdb_vote_count),
+           last_fetched_at = VALUES(last_fetched_at),
+           status = 'active',
+           movie_id = LAST_INSERT_ID(movie_id)`,
+        [
+          movie.id,
+          movie.title || movie.original_title || "Unknown",
+          movie.original_title || null,
+          releaseDate,
+          Number.isFinite(year) ? year : null,
+          null,
+          movie.original_language || null,
+          null,
+          movie.overview || null,
+          posterUrl,
+          backdropUrl,
+          Number.isFinite(Number(movie.vote_average)) ? Number(movie.vote_average) : null,
+          Number.isFinite(Number(movie.vote_count)) ? Number(movie.vote_count) : null,
+          null,
+          now
+        ]
+      );
+    } catch (err) {
+      // If schema isn't migrated yet, skip TMDB upsert instead of failing the request.
+      continue;
+    }
 
     const movieId = result.insertId;
     savedIds.push(movieId);
@@ -128,6 +152,108 @@ async function upsertTmdbMovies(tmdbMovies, language) {
     savedIds
   );
   return rows;
+}
+
+async function syncTmdbMovieExtras(movie) {
+  if (!movie?.tmdb_id) {
+    return;
+  }
+  const tmdbLanguage = movie.language || process.env.TMDB_LANGUAGE || "zh-CN";
+  const details = await getTmdbMovieDetails(movie.tmdb_id, tmdbLanguage);
+  const credits = await getTmdbMovieCredits(movie.tmdb_id, tmdbLanguage);
+  const keywords = await getTmdbMovieKeywords(movie.tmdb_id);
+
+  const posterUrl = buildTmdbPosterUrl(details.poster_path);
+  const backdropUrl = buildTmdbBackdropUrl(details.backdrop_path);
+  const revenue = Number.isFinite(Number(details.revenue)) ? Number(details.revenue) : null;
+  const voteAverage = Number.isFinite(Number(details.vote_average)) ? Number(details.vote_average) : null;
+  const voteCount = Number.isFinite(Number(details.vote_count)) ? Number(details.vote_count) : null;
+  const runtime = Number.isFinite(Number(details.runtime)) ? Number(details.runtime) : null;
+
+  try {
+    await pool.query(
+      `UPDATE movies
+       SET runtime_minutes = COALESCE(?, runtime_minutes),
+           description = COALESCE(?, description),
+           poster_url = COALESCE(?, poster_url),
+           backdrop_url = COALESCE(?, backdrop_url),
+           tmdb_revenue = COALESCE(?, tmdb_revenue),
+           tmdb_vote_average = COALESCE(?, tmdb_vote_average),
+           tmdb_vote_count = COALESCE(?, tmdb_vote_count),
+           last_fetched_at = ?
+       WHERE movie_id = ?`,
+      [
+        runtime,
+        details.overview || null,
+        posterUrl,
+        backdropUrl,
+        revenue,
+        voteAverage,
+        voteCount,
+        new Date(),
+        movie.movie_id
+      ]
+    );
+  } catch {
+    // Ignore if schema isn't migrated yet.
+  }
+  try {
+    await pool.query("DELETE FROM movie_keywords WHERE movie_id = ?", [movie.movie_id]);
+    if (Array.isArray(keywords)) {
+      for (const keyword of keywords) {
+        if (keyword?.id && keyword?.name) {
+          await pool.query(
+            "INSERT INTO movie_keywords (movie_id, keyword_id, name) VALUES (?, ?, ?)",
+            [movie.movie_id, keyword.id, keyword.name]
+          );
+        }
+      }
+    }
+  } catch {
+    // Ignore if keywords table doesn't exist yet.
+  }
+
+  try {
+    await pool.query("DELETE FROM movie_cast WHERE movie_id = ?", [movie.movie_id]);
+    const castList = Array.isArray(credits?.cast) ? credits.cast.slice(0, 12) : [];
+    for (const cast of castList) {
+      if (!cast?.id || !cast?.name) continue;
+      await pool.query(
+        "INSERT INTO movie_cast (movie_id, cast_id, name, character_name, profile_url, cast_order) VALUES (?, ?, ?, ?, ?, ?)",
+        [
+          movie.movie_id,
+          cast.id,
+          cast.name,
+          cast.character || null,
+          buildTmdbProfileUrl(cast.profile_path),
+          Number.isFinite(Number(cast.order)) ? Number(cast.order) : null
+        ]
+      );
+    }
+  } catch {
+    // Ignore if cast table doesn't exist yet.
+  }
+
+  try {
+    await pool.query("DELETE FROM movie_crew WHERE movie_id = ?", [movie.movie_id]);
+    const crewList = Array.isArray(credits?.crew) ? credits.crew : [];
+    const directors = crewList.filter((member) => member?.job === "Director").slice(0, 3);
+    for (const crew of directors) {
+      if (!crew?.id || !crew?.name) continue;
+      await pool.query(
+        "INSERT INTO movie_crew (movie_id, crew_id, name, job, profile_url) VALUES (?, ?, ?, ?, ?)",
+        [
+          movie.movie_id,
+          crew.id,
+          crew.name,
+          crew.job || null,
+          buildTmdbProfileUrl(crew.profile_path)
+        ]
+      );
+    }
+  } catch {
+    // Ignore if crew table doesn't exist yet.
+  }
 }
 
 export async function listMovies(req, res, next) {
@@ -177,8 +303,11 @@ export async function listMovies(req, res, next) {
     sql += " WHERE m.status = 'active'";
 
     if (q) {
-      sql += " AND (m.title LIKE ? OR m.original_title LIKE ?)";
-      params.push(`%${q}%`, `%${q}%`);
+      sql +=
+        " AND (m.title LIKE ? OR m.original_title LIKE ?" +
+        " OR EXISTS (SELECT 1 FROM movie_cast mc WHERE mc.movie_id = m.movie_id AND (mc.name LIKE ? OR mc.character_name LIKE ?))" +
+        " OR EXISTS (SELECT 1 FROM movie_crew cr WHERE cr.movie_id = m.movie_id AND cr.job = 'Director' AND cr.name LIKE ?))";
+      params.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
     }
     if (year) {
       sql += " AND m.year = ?";
@@ -239,26 +368,83 @@ export async function listMovies(req, res, next) {
 export async function getMovie(req, res, next) {
   try {
     const movieId = Number(req.params.movieId);
-    const [[movie]] = await pool.query("SELECT * FROM movies WHERE movie_id = ?", [movieId]);
+    let [[movie]] = await pool.query("SELECT * FROM movies WHERE movie_id = ?", [movieId]);
     if (!movie) {
       return res.status(404).json({ error: "movie not found" });
+    }
+
+    if (movie.source === "tmdb") {
+      const cutoff = new Date(Date.now() - getTmdbCacheDays() * 24 * 60 * 60 * 1000);
+      const needsRefresh = !movie.last_fetched_at || new Date(movie.last_fetched_at) < cutoff;
+      const needsExtras =
+        movie.tmdb_revenue === null ||
+        movie.tmdb_vote_average === null ||
+        movie.tmdb_vote_count === null;
+      if (needsRefresh || needsExtras) {
+        try {
+          await syncTmdbMovieExtras(movie);
+          [[movie]] = await pool.query("SELECT * FROM movies WHERE movie_id = ?", [movieId]);
+        } catch (err) {
+          // Fallback to existing data if TMDB fetch fails.
+        }
+      }
     }
     const [genres] = await pool.query(
       "SELECT g.genre_id, g.name FROM movie_genres mg JOIN genres g ON mg.genre_id = g.genre_id WHERE mg.movie_id = ?",
       [movieId]
     );
-    const [[ratingStats]] = await pool.query(
-      "SELECT AVG(score) AS avg_score, COUNT(*) AS rating_count FROM ratings WHERE movie_id = ?",
-      [movieId]
-    );
-    const [[reviewCount]] = await pool.query(
-      "SELECT COUNT(*) AS review_count FROM reviews WHERE movie_id = ? AND status = 'visible'",
-      [movieId]
-    );
-    const [reviews] = await pool.query(
-      "SELECT r.review_id, r.content, r.created_at, u.username FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.movie_id = ? AND r.status = 'visible' ORDER BY r.created_at DESC",
-      [movieId]
-    );
+    const ratingStats = {
+      avg_score: movie.tmdb_vote_average ?? null,
+      rating_count: movie.tmdb_vote_count ?? 0
+    };
+    let reviewCount = 0;
+    let reviews = [];
+    if (movie.source === "tmdb" && movie.tmdb_id) {
+      try {
+        const tmdbLanguage = movie.language || process.env.TMDB_LANGUAGE || "zh-CN";
+        const tmdbReviews = await getTmdbMovieReviews(movie.tmdb_id, tmdbLanguage);
+        reviewCount = tmdbReviews.total;
+        reviews = tmdbReviews.results.map((item) => ({
+          review_id: item.id,
+          content: item.content,
+          created_at: item.created_at,
+          username: item.author || "TMDB User"
+        }));
+      } catch {
+        reviewCount = 0;
+        reviews = [];
+      }
+    } else {
+      const [[reviewRow]] = await pool.query(
+        "SELECT COUNT(*) AS review_count FROM reviews WHERE movie_id = ? AND status = 'visible'",
+        [movieId]
+      );
+      reviewCount = reviewRow?.review_count || 0;
+      const [rows] = await pool.query(
+        "SELECT r.review_id, r.content, r.created_at, u.username FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.movie_id = ? AND r.status = 'visible' ORDER BY r.created_at DESC",
+        [movieId]
+      );
+      reviews = rows;
+    }
+
+    let keywords = [];
+    let cast = [];
+    try {
+      [keywords] = await pool.query(
+        "SELECT keyword_id, name FROM movie_keywords WHERE movie_id = ? ORDER BY name ASC",
+        [movieId]
+      );
+    } catch {
+      keywords = [];
+    }
+    try {
+      [cast] = await pool.query(
+        "SELECT cast_id, name, character_name, profile_url, cast_order FROM movie_cast WHERE movie_id = ? ORDER BY cast_order ASC, name ASC",
+        [movieId]
+      );
+    } catch {
+      cast = [];
+    }
 
     let related = [];
     if (genres.length > 0) {
@@ -279,10 +465,12 @@ export async function getMovie(req, res, next) {
     return res.json({
       movie,
       genres,
-      rating: ratingStats || { avg_score: null, rating_count: 0 },
-      review_count: reviewCount?.review_count || 0,
+      rating: ratingStats,
+      review_count: reviewCount,
       reviews,
-      related
+      related,
+      keywords,
+      cast
     });
   } catch (err) {
     return next(err);

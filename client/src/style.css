@@ -382,7 +382,7 @@ a {
 }
 
 .poster-placeholder {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900' viewBox='0 0 600 900'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f5d2b8'/><stop offset='1' stop-color='%23f1b58f'/></linearGradient></defs><rect width='600' height='900' fill='url(%23g)'/><rect x='48' y='60' width='504' height='780' rx='28' fill='white' opacity='0.55'/><text x='50%' y='46%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='40' fill='%237b2f1a'>FilmRank</text><text x='50%' y='52%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='20' fill='%237b6f66'>No poster available</text></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900' viewBox='0 0 600 900'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23f5d2b8'/><stop offset='1' stop-color='%23f1b58f'/></linearGradient></defs><rect width='600' height='900' fill='url(%23g)'/><rect x='48' y='60' width='504' height='780' rx='28' fill='white' opacity='0.55'/><text x='50%' y='46%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='40' fill='%237b2f1a'>FilmRank</text><text x='50%' y='52%' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='20' fill='%237b6f66'>%E6%9A%82%E6%97%A0%E6%B5%B7%E6%8A%A5</text></svg>");
   background-size: cover;
   background-position: center;
 }
@@ -545,6 +545,14 @@ input[type="range"] {
   margin-top: 16px;
 }
 
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .score {
   font-size: 20px;
   font-weight: 600;
@@ -571,6 +579,13 @@ input[type="range"] {
   border-top: 1px dashed var(--border);
 }
 
+.bookmark-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .split {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -580,6 +595,36 @@ input[type="range"] {
 .stack {
   display: grid;
   gap: 12px;
+}
+
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.cast-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.cast-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #f5d2b8, #f1b58f);
+}
+
+.cast-avatar.placeholder {
+  display: block;
 }
 
 .list-row {

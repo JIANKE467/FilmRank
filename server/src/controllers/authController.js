@@ -33,7 +33,7 @@ export async function login(req, res, next) {
       return res.status(400).json({ error: "username and password required" });
     }
     const [rows] = await pool.query(
-      "SELECT user_id, username, password_hash, role, status FROM users WHERE username = ?",
+      "SELECT user_id, username, password_hash, role, status, email, bio FROM users WHERE username = ?",
       [username]
     );
     if (rows.length === 0) {
@@ -52,7 +52,16 @@ export async function login(req, res, next) {
       process.env.JWT_SECRET || "dev-secret",
       { expiresIn: "7d" }
     );
-    return res.json({ token, user: { user_id: user.user_id, username: user.username, role: user.role } });
+    return res.json({
+      token,
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+        bio: user.bio
+      }
+    });
   } catch (err) {
     return next(err);
   }

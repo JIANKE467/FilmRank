@@ -23,7 +23,7 @@ defineProps({
   },
   alt: {
     type: String,
-    default: "Movie poster"
+    default: "电影海报"
   },
   size: {
     type: String,

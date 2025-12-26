@@ -2,16 +2,16 @@
   <section class="page">
     <div class="page-hero">
       <div>
-        <p class="eyebrow">Movie Search</p>
-        <h1>Find the film that matches your mood</h1>
-        <p class="muted">Search by title, year, genre, or language, then refine with advanced filters.</p>
+        <p class="eyebrow">电影搜索</p>
+        <h1>找到与你心情匹配的电影</h1>
+        <p class="muted">按片名、年份、类型或语言搜索，并通过筛选精确定位。</p>
       </div>
       <div class="search-panel">
         <div class="search-box">
           <input
             v-model="filters.q"
             class="input"
-            placeholder="Search by title, actor, or keyword"
+            placeholder="按片名、导演、演员或角色搜索"
             @focus="showSuggestions = true"
             @blur="hideSuggestions"
           />
@@ -20,7 +20,7 @@
             class="suggestion-panel"
           >
             <div v-if="history.length" class="suggestion-group">
-              <p class="label">Recent searches</p>
+              <p class="label">最近搜索</p>
               <div class="suggestion-row">
                 <button
                   v-for="item in history"
@@ -33,7 +33,7 @@
               </div>
             </div>
             <div v-if="suggestions.length" class="suggestion-group">
-              <p class="label">Title matches</p>
+              <p class="label">片名匹配</p>
               <div class="suggestion-list">
                 <button
                   v-for="item in suggestions"
@@ -47,7 +47,7 @@
               </div>
             </div>
             <div v-if="genres.length" class="suggestion-group">
-              <p class="label">Popular genres</p>
+              <p class="label">热门类型</p>
               <div class="suggestion-row">
                 <button
                   v-for="genre in genres.slice(0, 8)"
@@ -61,9 +61,9 @@
             </div>
           </div>
         </div>
-        <button class="button" @click="load">Search</button>
+        <button class="button" @click="load">搜索</button>
         <button class="button ghost" @click="toggleFilters">
-          {{ filtersOpen ? "Hide filters" : "Advanced filters" }}
+          {{ filtersOpen ? "收起筛选" : "高级筛选" }}
         </button>
       </div>
     </div>
@@ -71,71 +71,51 @@
     <div v-if="filtersOpen" class="filter-card">
       <div class="filter-grid">
         <div>
-          <label class="label">Year</label>
+          <label class="label">年份</label>
           <input v-model="filters.year" class="input" placeholder="2024" />
         </div>
         <div>
-          <label class="label">Genre</label>
+          <label class="label">类型</label>
           <select v-model="filters.genreId" class="input">
-            <option value="">All</option>
+            <option value="">全部</option>
             <option v-for="genre in genres" :key="genre.genre_id" :value="String(genre.genre_id)">
               {{ genre.name }}
             </option>
           </select>
         </div>
         <div>
-          <label class="label">Language</label>
+          <label class="label">语言</label>
           <input v-model="filters.language" class="input" placeholder="en / zh" />
         </div>
         <div>
-          <label class="label">Country</label>
+          <label class="label">地区</label>
           <input v-model="filters.country" class="input" placeholder="US / CN" />
         </div>
         <div>
-          <label class="label">Runtime (min)</label>
+          <label class="label">时长（分钟）</label>
           <input v-model="filters.minRuntime" class="input" placeholder="80" />
         </div>
         <div>
-          <label class="label">Runtime (max)</label>
+          <label class="label">时长（最大）</label>
           <input v-model="filters.maxRuntime" class="input" placeholder="180" />
         </div>
         <div>
-          <label class="label">Sort by</label>
+          <label class="label">排序</label>
           <select v-model="filters.sort" class="input">
-            <option value="latest">Latest</option>
-            <option value="hot">Hot</option>
-            <option value="rating">Top rated</option>
+            <option value="latest">最新</option>
           </select>
         </div>
         <div class="filter-actions">
-          <button class="button" @click="load">Apply</button>
-          <button class="button secondary" @click="reset">Clear filters</button>
+          <button class="button" @click="load">应用</button>
+          <button class="button secondary" @click="reset">清空筛选</button>
         </div>
       </div>
     </div>
 
     <div class="sort-bar">
-      <span class="label">Sort</span>
-      <button
-        class="button"
-        :class="{ secondary: filters.sort !== 'hot' }"
-        @click="setSort('hot')"
-      >
-        Hot
-      </button>
-      <button
-        class="button"
-        :class="{ secondary: filters.sort !== 'rating' }"
-        @click="setSort('rating')"
-      >
-        Top rated
-      </button>
-      <button
-        class="button"
-        :class="{ secondary: filters.sort !== 'latest' }"
-        @click="setSort('latest')"
-      >
-        Latest
+      <span class="label">排序</span>
+      <button class="button" :class="{ secondary: filters.sort !== 'latest' }" @click="setSort('latest')">
+        最新
       </button>
     </div>
 
@@ -148,17 +128,14 @@
           <div>
             <h3>{{ movie.title }}</h3>
             <p class="muted">{{ movie.year || "-" }} / {{ movie.language || "-" }}</p>
-            <p class="muted" v-if="movie.watch_count !== undefined || movie.avg_score !== undefined">
-              Hot: {{ movie.watch_count ?? 0 }} / Score: {{ formatScore(movie.avg_score) }}
-            </p>
           </div>
-          <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">View details</RouterLink>
+          <RouterLink class="button secondary" :to="`/movies/${movie.movie_id}`">查看详情</RouterLink>
         </div>
       </article>
     </div>
-    <p class="muted" v-else-if="!isLoading">No movies found. Try a different query.</p>
+    <p class="muted" v-else-if="!isLoading">没有找到影片，请换个关键词试试。</p>
     <div class="load-more" v-if="hasMore && !isLoading">
-      <button class="button secondary" @click="loadMore">Load more</button>
+      <button class="button secondary" @click="loadMore">加载更多</button>
     </div>
   </section>
 </template>
@@ -213,12 +190,6 @@ function reset() {
 function setSort(value) {
   filters.sort = value;
   load();
-}
-
-function formatScore(value) {
-  if (value === null || value === undefined) return "--";
-  const num = Number(value);
-  return Number.isFinite(num) ? num.toFixed(1) : "--";
 }
 
 function loadHistory() {

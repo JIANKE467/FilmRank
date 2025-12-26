@@ -1,5 +1,7 @@
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+const TMDB_PROFILE_BASE = "https://image.tmdb.org/t/p/w185";
+const TMDB_BACKDROP_BASE = "https://image.tmdb.org/t/p/w780";
 const GENRE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 let cachedGenres = {
@@ -77,4 +79,38 @@ export function buildTmdbPosterUrl(path) {
     return null;
   }
   return `${TMDB_IMAGE_BASE}${path}`;
+}
+
+export function buildTmdbBackdropUrl(path) {
+  if (!path) {
+    return null;
+  }
+  return `${TMDB_BACKDROP_BASE}${path}`;
+}
+
+export function buildTmdbProfileUrl(path) {
+  if (!path) {
+    return null;
+  }
+  return `${TMDB_PROFILE_BASE}${path}`;
+}
+
+export async function getTmdbMovieDetails(tmdbId, language) {
+  return tmdbRequest(`/movie/${tmdbId}`, { language });
+}
+
+export async function getTmdbMovieCredits(tmdbId, language) {
+  return tmdbRequest(`/movie/${tmdbId}/credits`, { language });
+}
+
+export async function getTmdbMovieKeywords(tmdbId) {
+  const data = await tmdbRequest(`/movie/${tmdbId}/keywords`);
+  return Array.isArray(data.keywords) ? data.keywords : [];
+}
+
+export async function getTmdbMovieReviews(tmdbId, language) {
+  const data = await tmdbRequest(`/movie/${tmdbId}/reviews`, { language });
+  const total = Number.isFinite(Number(data.total_results)) ? Number(data.total_results) : 0;
+  const results = Array.isArray(data.results) ? data.results : [];
+  return { total, results };
 }

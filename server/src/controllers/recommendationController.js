@@ -22,7 +22,7 @@ async function getHotMovies(topN) {
   );
   if (rows.length === 0) {
     const [fallback] = await pool.query(
-      "SELECT movie_id, COUNT(*) AS score FROM ratings GROUP BY movie_id ORDER BY score DESC LIMIT ?",
+      "SELECT movie_id, 1 AS score FROM movies WHERE status = 'active' ORDER BY release_date DESC, movie_id DESC LIMIT ?",
       [topN]
     );
     return fallback;
@@ -31,13 +31,6 @@ async function getHotMovies(topN) {
 }
 
 async function getUserTopGenres(userId) {
-  const [ratingGenres] = await pool.query(
-    "SELECT mg.genre_id, COUNT(*) AS cnt FROM ratings r JOIN movie_genres mg ON r.movie_id = mg.movie_id WHERE r.user_id = ? GROUP BY mg.genre_id ORDER BY cnt DESC LIMIT 3",
-    [userId]
-  );
-  if (ratingGenres.length > 0) {
-    return ratingGenres.map((row) => row.genre_id);
-  }
   const [watchGenres] = await pool.query(
     "SELECT mg.genre_id, COUNT(*) AS cnt FROM watch_history w JOIN movie_genres mg ON w.movie_id = mg.movie_id WHERE w.user_id = ? GROUP BY mg.genre_id ORDER BY cnt DESC LIMIT 3",
     [userId]
@@ -54,10 +47,9 @@ async function getContentCandidates(userId, genreIds, topN) {
     JOIN movie_genres mg ON m.movie_id = mg.movie_id
     WHERE m.status = 'active'
       AND mg.genre_id IN (${placeholders})
-      AND m.movie_id NOT IN (SELECT movie_id FROM ratings WHERE user_id = ?)
       AND m.movie_id NOT IN (SELECT movie_id FROM watch_history WHERE user_id = ?)
     LIMIT ?`;
-  const params = [...genreIds, userId, userId, topN];
+  const params = [...genreIds, userId, topN];
   const [rows] = await pool.query(sql, params);
   return rows.map((row) => ({ movie_id: row.movie_id, score: 1, reason: "Similar genres" }));
 }
@@ -106,47 +98,8 @@ function getTopNFromMap(scoreMap, topN) {
 }
 
 async function getCFRecommendations(topN) {
-  const [ratings] = await pool.query("SELECT user_id, movie_id, score FROM ratings");
-  if (ratings.length === 0) return new Map();
+  return new Map();
 
-  const { userRatings } = buildRatingMaps(ratings);
-  const userIds = Array.from(userRatings.keys());
-  const recMap = new Map();
-
-  for (const userId of userIds) {
-    const targetRatings = userRatings.get(userId);
-    const scoreSums = new Map();
-    const weightSums = new Map();
-
-    for (const otherId of userIds) {
-      if (otherId === userId) continue;
-      const otherRatings = userRatings.get(otherId);
-      const sim = cosineSimilarity(targetRatings, otherRatings);
-      if (sim <= 0) continue;
-
-      for (const [movieId, score] of otherRatings.entries()) {
-        if (targetRatings.has(movieId)) continue;
-        const prevScore = scoreSums.get(movieId) || 0;
-        const prevWeight = weightSums.get(movieId) || 0;
-        scoreSums.set(movieId, prevScore + sim * score);
-        weightSums.set(movieId, prevWeight + sim);
-      }
-    }
-
-    const predicted = new Map();
-    for (const [movieId, sum] of scoreSums.entries()) {
-      const weight = weightSums.get(movieId) || 1;
-      predicted.set(movieId, sum / weight);
-    }
-
-    const top = getTopNFromMap(predicted, topN).map((item) => ({
-      ...item,
-      reason: "Similar users liked this"
-    }));
-
-    recMap.set(userId, top);
-  }
-  return recMap;
 }
 
 async function getHybridRecommendations(topN) {
