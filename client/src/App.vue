@@ -1,5 +1,6 @@
 <template>
   <div class="app-shell">
+    <a class="skip-link" href="#main">跳到主要内容</a>
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark">FR</span>
@@ -8,7 +9,7 @@
           <div class="brand-subtitle">发现 · 收藏 · 推荐</div>
         </div>
       </div>
-      <nav class="nav-links">
+      <nav class="nav-links" aria-label="主导航">
         <RouterLink to="/">首页</RouterLink>
         <RouterLink to="/search">搜索</RouterLink>
         <RouterLink to="/profile">我的</RouterLink>
@@ -18,7 +19,7 @@
         <button v-if="isAuthed" class="button secondary" @click="logout">退出</button>
       </nav>
     </header>
-    <main class="container">
+    <main id="main" class="container" tabindex="-1">
       <RouterView />
     </main>
     <footer class="footer">

@@ -50,6 +50,37 @@ a {
   color: inherit;
   text-decoration: none;
 }
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #101624;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateY(-120%);
+  transition: transform 0.2s ease;
+  z-index: 20;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.button:focus-visible,
+.page-number:focus-visible,
+.page-nav:focus-visible,
+.chip:focus-visible,
+.suggestion-chip:focus-visible,
+.suggestion-item:focus-visible,
+.nav-links a:focus-visible,
+.link:focus-visible,
+.input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
 
 .app-shell {
   min-height: 100vh;

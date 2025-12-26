@@ -12,12 +12,18 @@
             v-model="filters.q"
             class="input"
             placeholder="按片名、导演、演员或角色搜索"
+            aria-autocomplete="list"
+            :aria-expanded="showSuggestions"
+            aria-controls="search-suggestions"
             @focus="showSuggestions = true"
+            @keydown.esc="showSuggestions = false"
             @blur="hideSuggestions"
           />
           <div
             v-if="showSuggestions && (history.length || suggestions.length || genres.length)"
             class="suggestion-panel"
+            id="search-suggestions"
+            role="listbox"
           >
             <div v-if="history.length" class="suggestion-group">
               <p class="label">最近搜索</p>
@@ -26,6 +32,7 @@
                   v-for="item in history"
                   :key="item"
                   class="suggestion-chip"
+                  role="option"
                   @mousedown.prevent="applySearch(item)"
                 >
                   {{ item }}
@@ -39,6 +46,7 @@
                   v-for="item in suggestions"
                   :key="item.movie_id"
                   class="suggestion-item"
+                  role="option"
                   @mousedown.prevent="applySearch(item.title)"
                 >
                   <span>{{ item.title }}</span>
@@ -53,6 +61,7 @@
                   v-for="genre in genres.slice(0, 8)"
                   :key="genre.genre_id"
                   class="suggestion-chip"
+                  role="option"
                   @mousedown.prevent="applyGenre(genre)"
                 >
                   {{ genre.name }}
@@ -123,7 +132,7 @@
       <span class="muted">关键词：{{ filters.q }}</span>
     </div>
 
-    <p class="muted" v-if="message">{{ message }}</p>
+    <p class="muted" v-if="message" role="status" aria-live="polite">{{ message }}</p>
 
     <div class="grid" v-if="movies.length">
       <article class="movie-card" v-for="movie in movies" :key="movie.movie_id">

@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    <div v-if="message" class="muted">{{ message }}</div>
+    <div v-if="message" class="muted" role="status" aria-live="polite">{{ message }}</div>
 
     <section class="section">
       <div class="section-head">
