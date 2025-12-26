@@ -4,7 +4,7 @@
       <div>
         <p class="eyebrow">推荐实验室</p>
         <h1>你的个性化片单</h1>
-        <p class="muted">切换算法查看推荐理由。</p>
+        <p class="muted">切换算法查看推荐理由与覆盖策略。</p>
       </div>
       <div class="search-panel">
         <select v-model="algorithm" class="input" style="max-width: 220px;">
@@ -16,6 +16,10 @@
         </select>
         <button class="button" @click="load">刷新</button>
       </div>
+    </div>
+
+    <div class="info-card">
+      <p class="muted">{{ algoHint }}</p>
     </div>
 
     <p class="muted" v-if="message">{{ message }}</p>
@@ -37,7 +41,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { RouterLink } from "vue-router";
 import { api } from "../api.js";
 import useAuth from "../store/auth.js";
@@ -47,6 +51,15 @@ const algorithm = ref("");
 const items = ref([]);
 const message = ref("");
 const { isAuthed } = useAuth();
+
+const algoHint = computed(() => {
+  if (!algorithm.value) return "显示最新一批推荐结果。";
+  if (algorithm.value === "hot") return "热门：根据近期热度推荐。";
+  if (algorithm.value === "content") return "内容：根据影片类型与偏好推荐。";
+  if (algorithm.value === "cf") return "协同过滤：相似用户喜欢的内容。";
+  if (algorithm.value === "hybrid") return "混合：多策略加权推荐。";
+  return "推荐策略说明加载中。";
+});
 
 async function load() {
   message.value = "";

@@ -114,3 +114,21 @@ export async function getTmdbMovieReviews(tmdbId, language) {
   const results = Array.isArray(data.results) ? data.results : [];
   return { total, results };
 }
+
+export async function listTmdbCategory(category, language, page = 1) {
+  const map = {
+    popular: "/movie/popular",
+    now_playing: "/movie/now_playing",
+    top_rated: "/movie/top_rated",
+    trending_week: "/trending/movie/week"
+  };
+  const path = map[category];
+  if (!path) {
+    const err = new Error("invalid tmdb category");
+    err.status = 400;
+    throw err;
+  }
+  const safePage = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+  const data = await tmdbRequest(path, { language, page: safePage });
+  return Array.isArray(data.results) ? data.results : [];
+}

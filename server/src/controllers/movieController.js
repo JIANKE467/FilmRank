@@ -8,7 +8,8 @@ import {
   getTmdbMovieDetails,
   getTmdbMovieCredits,
   getTmdbMovieKeywords,
-  getTmdbMovieReviews
+  getTmdbMovieReviews,
+  listTmdbCategory
 } from "../services/tmdb.js";
 
 const DEFAULT_TMDB_CACHE_DAYS = 30;
@@ -269,8 +270,17 @@ export async function listMovies(req, res, next) {
       sort,
       page,
       page_size,
-      limit
+      limit,
+      tmdb_category
     } = req.query;
+
+    if (tmdb_category) {
+      const tmdbLanguage = language || process.env.TMDB_LANGUAGE || "zh-CN";
+      const tmdbPage = Number(page || 1);
+      const tmdbMovies = await listTmdbCategory(String(tmdb_category), tmdbLanguage, tmdbPage);
+      const savedRows = await upsertTmdbMovies(tmdbMovies, tmdbLanguage);
+      return res.json(savedRows.slice(0, Number(limit || page_size || 12)));
+    }
 
     const rawLimit = Number(limit || page_size || 24);
     const pageSize = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 100) : 24;

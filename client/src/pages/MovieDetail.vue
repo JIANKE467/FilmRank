@@ -51,14 +51,16 @@
             <p class="label">TMDB 评分</p>
             <p class="score">{{ tmdbRatingText }}</p>
           </div>
-          <button class="button secondary" :disabled="!isAuthed" @click="startWatch">开始观看</button>
+          <button class="button secondary" :disabled="!isAuthed || bookmarkId" @click="saveFavorite">
+            {{ bookmarkId ? "已收藏" : "收藏" }}
+          </button>
         </div>
         <div class="action-row">
-          <button class="button ghost" disabled>收藏</button>
-          <button class="button ghost" disabled>分享</button>
-          <span class="muted">更多操作即将上线</span>
+          <button class="button ghost" :disabled="!isAuthed || !bookmarkId" @click="clearBookmark">
+            清除收藏
+          </button>
+          <span class="muted" v-if="!isAuthed">登录后可收藏影片</span>
         </div>
-        <p class="muted" v-if="watchMessage">{{ watchMessage }}</p>
       </div>
     </div>
 
@@ -102,9 +104,9 @@
         <p class="muted">给自己做个标注，方便以后回看。</p>
         <textarea v-model="bookmarkNote" class="input" rows="4" placeholder="写下你的标注..."></textarea>
         <div class="bookmark-actions">
-          <button class="button" :disabled="!isAuthed" @click="saveBookmark">保存书签</button>
+          <button class="button" :disabled="!isAuthed" @click="saveNote">书签标记</button>
           <button class="button secondary" :disabled="!isAuthed || !bookmarkId" @click="clearBookmark">
-            清除
+            删除书签
           </button>
         </div>
         <p class="muted" v-if="bookmarkMessage">{{ bookmarkMessage }}</p>
@@ -216,7 +218,6 @@ const errorMessage = ref("");
 const review = ref("");
 const bookmarkMessage = ref("");
 const reviewMessage = ref("");
-const watchMessage = ref("");
 const editingReviewId = ref(null);
 const editingContent = ref("");
 const cacheKeyPrefix = "filmrank.movie.";
@@ -229,6 +230,7 @@ const keywords = ref([]);
 const cast = ref([]);
 const bookmarkNote = ref("");
 const bookmarkId = ref(null);
+const bookmarkType = ref(null);
 const isTmdb = ref(false);
 
 function formatDate(value) {
@@ -298,13 +300,16 @@ async function loadBookmark(movieId) {
     if (data) {
       bookmarkId.value = data.bookmark_id;
       bookmarkNote.value = data.note || "";
+      bookmarkType.value = data.kind || (data.note ? "note" : "favorite");
     } else {
       bookmarkId.value = null;
       bookmarkNote.value = "";
+      bookmarkType.value = null;
     }
   } catch {
     bookmarkId.value = null;
     bookmarkNote.value = "";
+    bookmarkType.value = null;
   }
 }
 
@@ -389,10 +394,25 @@ async function load(options = {}) {
   }
 }
 
-async function saveBookmark() {
+async function saveFavorite() {
   bookmarkMessage.value = "";
   try {
-    await api.saveBookmark({ movie_id: movie.value.movie_id, note: bookmarkNote.value });
+    await api.saveBookmark({ movie_id: movie.value.movie_id, type: "favorite" });
+    bookmarkMessage.value = "已收藏";
+    await loadBookmark(movie.value.movie_id);
+  } catch (err) {
+    bookmarkMessage.value = err.message;
+  }
+}
+
+async function saveNote() {
+  bookmarkMessage.value = "";
+  try {
+    await api.saveBookmark({
+      movie_id: movie.value.movie_id,
+      type: "note",
+      note: bookmarkNote.value
+    });
     bookmarkMessage.value = "书签已保存";
     await loadBookmark(movie.value.movie_id);
   } catch (err) {
@@ -421,20 +441,6 @@ async function submitReview() {
     await load({ force: true });
   } catch (err) {
     reviewMessage.value = err.message;
-  }
-}
-
-async function startWatch() {
-  watchMessage.value = "";
-  if (!isAuthed.value) {
-    watchMessage.value = "登录后才能开始观看。";
-    return;
-  }
-  try {
-    await api.startWatch({ movie_id: movie.value.movie_id, device: "web" });
-    watchMessage.value = "已开始观看。";
-  } catch (err) {
-    watchMessage.value = err.message;
   }
 }
 

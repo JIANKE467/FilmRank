@@ -119,6 +119,11 @@
       </button>
     </div>
 
+    <div class="result-bar" v-if="!isLoading">
+      <span class="muted">共 {{ movies.length }} 部</span>
+      <span class="muted" v-if="filters.q">关键词：{{ filters.q }}</span>
+    </div>
+
     <p class="muted" v-if="message">{{ message }}</p>
 
     <div class="grid" v-if="movies.length">

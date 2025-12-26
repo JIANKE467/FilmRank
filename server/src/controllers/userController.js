@@ -3,15 +3,26 @@ import pool from "../db/pool.js";
 export async function getUserStats(req, res, next) {
   try {
     const userId = req.user.user_id;
-    let bookmarkRow = { bookmark_count: 0 };
+    let bookmarkRow = { bookmark_count: 0, favorite_count: 0 };
     try {
       const [[row]] = await pool.query(
-        "SELECT COUNT(*) AS bookmark_count FROM bookmarks WHERE user_id = ?",
+        `SELECT
+           SUM(CASE WHEN kind = 'note' THEN 1 ELSE 0 END) AS bookmark_count,
+           SUM(CASE WHEN kind = 'favorite' THEN 1 ELSE 0 END) AS favorite_count
+         FROM bookmarks
+         WHERE user_id = ?`,
         [userId]
       );
       bookmarkRow = row || bookmarkRow;
     } catch {
-      bookmarkRow = { bookmark_count: 0 };
+      const [[row]] = await pool.query(
+        "SELECT COUNT(*) AS bookmark_count FROM bookmarks WHERE user_id = ? AND note IS NOT NULL AND note <> ''",
+        [userId]
+      );
+      bookmarkRow = {
+        bookmark_count: row?.bookmark_count || 0,
+        favorite_count: 0
+      };
     }
     const [[reviewRow]] = await pool.query(
       "SELECT COUNT(*) AS review_count FROM reviews WHERE user_id = ?",
@@ -19,6 +30,7 @@ export async function getUserStats(req, res, next) {
     );
     return res.json({
       bookmark_count: bookmarkRow?.bookmark_count || 0,
+      favorite_count: bookmarkRow?.favorite_count || 0,
       review_count: reviewRow?.review_count || 0
     });
   } catch (err) {

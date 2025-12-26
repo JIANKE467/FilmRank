@@ -97,6 +97,25 @@ SET @col_exists = (
   SELECT COUNT(*)
   FROM information_schema.columns
   WHERE table_schema = @db_name
+    AND table_name = 'bookmarks'
+    AND column_name = 'kind'
+);
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE bookmarks ADD COLUMN kind ENUM(\"favorite\",\"note\") DEFAULT \"favorite\"', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+UPDATE bookmarks
+SET kind = CASE
+  WHEN note IS NULL OR note = '' THEN 'favorite'
+  ELSE 'note'
+END
+WHERE kind IS NULL;
+
+SET @col_exists = (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = @db_name
     AND table_name = 'users'
     AND column_name = 'bio'
 );

@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   user_id BIGINT NOT NULL,
   movie_id BIGINT NOT NULL,
   note VARCHAR(500) NULL,
+  kind ENUM('favorite','note') DEFAULT 'favorite',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_user_bookmark(user_id, movie_id),

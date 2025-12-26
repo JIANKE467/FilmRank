@@ -33,9 +33,17 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request(`/api/movies${qs ? `?${qs}` : ""}`);
   },
+  listTmdbCategory: (category, params = {}) => {
+    const qs = new URLSearchParams({ ...params, tmdb_category: category }).toString();
+    return request(`/api/movies?${qs}`);
+  },
   getMovie: (id) => request(`/api/movies/${id}`),
   listGenres: () => request("/api/genres"),
   saveBookmark: (payload) => request("/api/bookmarks", { method: "POST", body: JSON.stringify(payload) }),
+  listBookmarks: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/api/bookmarks${qs ? `?${qs}` : ""}`);
+  },
   getBookmark: (movieId) => request(`/api/bookmarks/${movieId}`),
   deleteBookmark: (movieId) => request(`/api/bookmarks/${movieId}`, { method: "DELETE" }),
   createReview: (payload) => request("/api/reviews", { method: "POST", body: JSON.stringify(payload) }),
