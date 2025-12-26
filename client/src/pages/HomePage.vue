@@ -174,10 +174,16 @@ async function load() {
       api.listTmdbTvCategory("on_the_air", { limit: pageSize, page: tvPage.value }),
       api.listGenres()
     ]);
-    genres.value = (genreList || []).slice(0, 8);
-    hot.value = (hotTmdb || []).slice(0, 6);
-    tvShows.value = (tvTmdb || []).slice(0, 6);
-    const hotCandidates = (hotTmdb || []).slice(0, 10);
+    const safeGenres = Array.isArray(genreList) ? genreList : [];
+    const safeHot = Array.isArray(hotTmdb) ? hotTmdb : [];
+    const safeTv = Array.isArray(tvTmdb) ? tvTmdb : [];
+    if (!Array.isArray(hotTmdb) || !Array.isArray(tvTmdb)) {
+      message.value = "数据接口返回异常，请稍后重试。";
+    }
+    genres.value = safeGenres.slice(0, 8);
+    hot.value = safeHot.slice(0, 6);
+    tvShows.value = safeTv.slice(0, 6);
+    const hotCandidates = safeHot.slice(0, 10);
     if (hotCandidates.length) {
       dailyPick.value = hotCandidates[Math.floor(Math.random() * hotCandidates.length)];
       hotSpotlights.value = hotCandidates.slice(0, 6);
