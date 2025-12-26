@@ -209,21 +209,43 @@ function buildPageWindow(current, canAdvance, size = 5) {
 
 async function load() {
   message.value = "";
+  await Promise.all([loadHot(), loadTv(), loadGenres()]);
+}
+
+function setHotPage(page) {
+  if (hotPage.value !== page) {
+    hotPage.value = page;
+    loadHot();
+  }
+}
+
+function setTvPage(page) {
+  if (tvPage.value !== page) {
+    tvPage.value = page;
+    loadTv();
+  }
+}
+
+async function loadGenres() {
   try {
-    const [hotTmdb, tvTmdb, genreList] = await Promise.all([
-      api.listTmdbCategory("trending_week", { limit: pageSize, page: hotPage.value }),
-      api.listTmdbTvCategory("on_the_air", { limit: pageSize, page: tvPage.value }),
-      api.listGenres()
-    ]);
-    const safeGenres = Array.isArray(genreList) ? genreList : [];
+    const genreList = await api.listGenres();
+    genres.value = Array.isArray(genreList) ? genreList.slice(0, 8) : [];
+  } catch (err) {
+    message.value = err.message;
+  }
+}
+
+async function loadHot() {
+  try {
+    const hotTmdb = await api.listTmdbCategory("trending_week", {
+      limit: pageSize,
+      page: hotPage.value
+    });
     const safeHot = Array.isArray(hotTmdb) ? hotTmdb : [];
-    const safeTv = Array.isArray(tvTmdb) ? tvTmdb : [];
-    if (!Array.isArray(hotTmdb) || !Array.isArray(tvTmdb)) {
-      message.value = "数据接口返回异常，请稍后重试。";
+    if (!Array.isArray(hotTmdb)) {
+      message.value = "热映数据加载异常，请稍后重试。";
     }
-    genres.value = safeGenres.slice(0, 8);
     hot.value = safeHot.slice(0, 6);
-    tvShows.value = safeTv.slice(0, 6);
     const hotCandidates = safeHot.slice(0, 10);
     if (hotCandidates.length) {
       dailyPick.value = hotCandidates[Math.floor(Math.random() * hotCandidates.length)];
@@ -237,20 +259,27 @@ async function load() {
     }
   } catch (err) {
     message.value = err.message;
+    hot.value = [];
+    dailyPick.value = null;
+    hotSpotlights.value = [];
+    stopSpotlightRotation();
   }
 }
 
-function setHotPage(page) {
-  if (hotPage.value !== page) {
-    hotPage.value = page;
-    load();
-  }
-}
-
-function setTvPage(page) {
-  if (tvPage.value !== page) {
-    tvPage.value = page;
-    load();
+async function loadTv() {
+  try {
+    const tvTmdb = await api.listTmdbTvCategory("on_the_air", {
+      limit: pageSize,
+      page: tvPage.value
+    });
+    const safeTv = Array.isArray(tvTmdb) ? tvTmdb : [];
+    if (!Array.isArray(tvTmdb)) {
+      message.value = "电视播出数据加载异常，请稍后重试。";
+    }
+    tvShows.value = safeTv.slice(0, 6);
+  } catch (err) {
+    message.value = err.message;
+    tvShows.value = [];
   }
 }
 
