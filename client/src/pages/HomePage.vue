@@ -162,6 +162,37 @@ const featuredPages = [1, 2, 3, 4, 5];
 const hotPages = [1, 2, 3, 4, 5];
 const latestPages = [1, 2, 3, 4, 5];
 
+function getMovieKey(movie) {
+  if (!movie) return null;
+  if (movie.tmdb_id) return `t:${movie.tmdb_id}`;
+  if (movie.movie_id) return `m:${movie.movie_id}`;
+  if (movie.id) return `t:${movie.id}`;
+  return null;
+}
+
+function pickUnique(source, used, limit) {
+  const result = [];
+  for (const item of source || []) {
+    const key = getMovieKey(item);
+    if (!key || used.has(key)) continue;
+    used.add(key);
+    result.push(item);
+    if (result.length >= limit) break;
+  }
+  return result;
+}
+
+function fillWithFallback(source, used, limit) {
+  const unique = pickUnique(source, used, limit);
+  if (unique.length >= limit) return unique;
+  const fallback = [];
+  for (const item of source || []) {
+    fallback.push(item);
+    if (fallback.length >= limit - unique.length) break;
+  }
+  return unique.concat(fallback);
+}
+
 function goSearch() {
   router.push({ path: "/search", query: query.value ? { q: query.value } : {} });
 }
@@ -179,26 +210,35 @@ async function load() {
       api.listTmdbCategory("now_playing", { limit: pageSize, page: latestPage.value }),
       api.listGenres()
     ]);
-    hot.value = (hotTmdb || []).slice(0, 6);
-    latest.value = (latestTmdb || []).slice(0, 6);
     genres.value = (genreList || []).slice(0, 8);
+    const used = new Set();
 
     if (isAuthed.value) {
       const data = await api.listRecommendations();
       if ((data.items || []).length) {
-        featured.value = (data.items || []).slice(0, 6);
+        const featuredBase = (data.items || []).slice(0, 6);
+        let featuredUnique = pickUnique(featuredBase, used, 6);
+        if (featuredUnique.length < 6) {
+          featuredUnique = featuredUnique.concat(
+            pickUnique(featuredTmdb || [], used, 6 - featuredUnique.length)
+          );
+        }
+        featured.value = featuredUnique;
         useFeaturedTmdb.value = false;
       } else {
-        featured.value = (featuredTmdb || []).slice(0, 6);
+        featured.value = fillWithFallback(featuredTmdb || [], used, 6);
         useFeaturedTmdb.value = true;
       }
     } else {
-      featured.value = (featuredTmdb || []).slice(0, 6).map((movie) => ({
+      const featuredUnique = fillWithFallback(featuredTmdb || [], used, 6).map((movie) => ({
         ...movie,
         reason: "登录以获取专属推荐"
       }));
+      featured.value = featuredUnique;
       useFeaturedTmdb.value = true;
     }
+    hot.value = fillWithFallback(hotTmdb || [], used, 6);
+    latest.value = fillWithFallback(latestTmdb || [], used, 6);
   } catch (err) {
     message.value = err.message;
   }
