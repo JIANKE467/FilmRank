@@ -260,6 +260,7 @@ a {
   gap: 12px;
 }
 
+
 .section-title {
   font-family: "Unbounded", sans-serif;
   font-size: 22px;
@@ -312,14 +313,20 @@ a {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
+  background: rgba(20, 30, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 16px;
   padding: 14px;
   box-shadow: var(--shadow);
   z-index: 5;
   display: grid;
   gap: 12px;
+}
+.suggestion-panel .label {
+  color: #cdd6e6;
+}
+.search-panel .input::placeholder {
+  color: #cdd6e6;
 }
 
 .suggestion-group {
@@ -336,8 +343,9 @@ a {
 .suggestion-chip {
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  color: #eef2ff;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -356,8 +364,9 @@ a {
   gap: 12px;
   padding: 8px 10px;
   border-radius: 12px;
-  border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef2ff;
   cursor: pointer;
 }
 
@@ -775,6 +784,21 @@ input[type="range"] {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(33, 199, 168, 0.12);
+}
+
+.page-nav {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.page-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .auth-page {
   align-items: center;

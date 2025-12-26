@@ -418,7 +418,8 @@ export async function getMovie(req, res, next) {
           review_id: item.id,
           content: item.content,
           created_at: item.created_at,
-          username: item.author || "TMDB User"
+          username: item.author || "TMDB User",
+          language: item.iso_639_1 || null
         }));
       } catch {
         reviewCount = 0;

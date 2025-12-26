@@ -41,6 +41,10 @@ export const api = {
     const qs = new URLSearchParams({ ...params, category }).toString();
     return request(`/api/tv?${qs}`);
   },
+  getTvShow: (id, params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/api/tv/${id}${qs ? `?${qs}` : ""}`);
+  },
   getMovie: (id) => request(`/api/movies/${id}`),
   listGenres: () => request("/api/genres"),
   saveBookmark: (payload) => request("/api/bookmarks", { method: "POST", body: JSON.stringify(payload) }),

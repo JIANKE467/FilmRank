@@ -119,9 +119,8 @@
       </button>
     </div>
 
-    <div class="result-bar" v-if="!isLoading">
-      <span class="muted">共 {{ movies.length }} 部</span>
-      <span class="muted" v-if="filters.q">关键词：{{ filters.q }}</span>
+    <div class="result-bar" v-if="!isLoading && filters.q">
+      <span class="muted">关键词：{{ filters.q }}</span>
     </div>
 
     <p class="muted" v-if="message">{{ message }}</p>
@@ -139,14 +138,26 @@
       </article>
     </div>
     <p class="muted" v-else-if="!isLoading">没有找到影片，请换个关键词试试。</p>
-    <div class="load-more" v-if="hasMore && !isLoading">
-      <button class="button secondary" @click="loadMore">加载更多</button>
+    <div class="pager-numbers" v-if="pageNumbers.length && !isLoading">
+      <button class="page-nav" :disabled="page === 1" @click="setPage(page - 1)">
+        上一页
+      </button>
+      <button
+        v-for="pageItem in pageNumbers"
+        :key="pageItem"
+        class="page-number"
+        :class="{ active: page === pageItem }"
+        @click="setPage(pageItem)"
+      >
+        {{ pageItem }}
+      </button>
+      <button class="page-nav" :disabled="!hasMore" @click="setPage(page + 1)">下一页</button>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { computed, ref, reactive, onMounted, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { api } from "../api.js";
 import PosterImage from "../components/PosterImage.vue";
@@ -165,6 +176,7 @@ const hasMore = ref(false);
 const pageSize = 18;
 const historyKey = "filmrank.search.history";
 let suggestTimer;
+const pageNumbers = computed(() => buildPageWindow(page.value, hasMore.value));
 const filters = reactive({
   q: "",
   year: "",
@@ -232,6 +244,18 @@ function applyGenre(genre) {
   load();
 }
 
+function buildPageWindow(current, canAdvance, size = 5) {
+  const safeCurrent = Number.isFinite(Number(current)) ? Number(current) : 1;
+  const maxPage = canAdvance ? safeCurrent + 2 : safeCurrent;
+  const end = Math.max(safeCurrent, maxPage);
+  const start = Math.max(1, end - size + 1);
+  const pages = [];
+  for (let i = start; i <= end; i += 1) {
+    pages.push(i);
+  }
+  return pages;
+}
+
 async function fetchSuggestions(value) {
   if (!value || value.trim().length < 2) {
     suggestions.value = [];
@@ -245,7 +269,7 @@ async function fetchSuggestions(value) {
 }
 
 async function load(options = {}) {
-  const { append = false } = options;
+  const targetPage = Number.isFinite(Number(options.page)) ? Number(options.page) : 1;
   message.value = "";
   isLoading.value = true;
   try {
@@ -259,15 +283,10 @@ async function load(options = {}) {
     if (filters.maxRuntime) params.max_runtime = filters.maxRuntime;
     if (filters.sort) params.sort = filters.sort;
     params.page_size = pageSize;
-    params.page = append ? page.value + 1 : 1;
+    params.page = targetPage;
     const result = await api.listMovies(params);
-    if (append) {
-      movies.value = [...movies.value, ...result];
-      page.value += 1;
-    } else {
-      movies.value = result;
-      page.value = 1;
-    }
+    movies.value = result;
+    page.value = targetPage;
     hasMore.value = result.length === pageSize;
     saveHistory(filters.q);
   } catch (err) {
@@ -277,9 +296,10 @@ async function load(options = {}) {
   }
 }
 
-function loadMore() {
-  if (hasMore.value && !isLoading.value) {
-    load({ append: true });
+function setPage(target) {
+  const safe = Math.max(1, Number(target) || 1);
+  if (safe !== page.value && !isLoading.value) {
+    load({ page: safe });
   }
 }
 
@@ -300,7 +320,7 @@ onMounted(() => {
   }
   loadHistory();
   loadGenres();
-  load();
+  load({ page: 1 });
 });
 
 watch(
@@ -312,7 +332,7 @@ watch(
     if (next.genre !== undefined) {
       filters.genreId = String(next.genre || "");
     }
-    load();
+    load({ page: 1 });
   }
 );
 

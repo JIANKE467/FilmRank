@@ -150,3 +150,11 @@ export async function listTmdbTvCategory(category, language, page = 1) {
   const data = await tmdbRequest(path, { language, page: safePage });
   return Array.isArray(data.results) ? data.results : [];
 }
+
+export async function getTmdbTvDetails(tvId, language) {
+  return tmdbRequest(`/tv/${tvId}`, { language });
+}
+
+export async function getTmdbTvCredits(tvId, language) {
+  return tmdbRequest(`/tv/${tvId}/credits`, { language });
+}

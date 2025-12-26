@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomePage from "../pages/HomePage.vue";
 import MovieDetail from "../pages/MovieDetail.vue";
+import TvDetail from "../pages/TvDetail.vue";
 import LoginPage from "../pages/LoginPage.vue";
 import RegisterPage from "../pages/RegisterPage.vue";
 import AdminPage from "../pages/AdminPage.vue";
@@ -12,6 +13,7 @@ const routes = [
   { path: "/search", name: "search", component: SearchPage },
   { path: "/profile", name: "profile", component: ProfilePage },
   { path: "/movies/:id", name: "movie", component: MovieDetail },
+  { path: "/tv/:id", name: "tv", component: TvDetail },
   { path: "/login", name: "login", component: LoginPage },
   { path: "/register", name: "register", component: RegisterPage },
   { path: "/admin", name: "admin", component: AdminPage }

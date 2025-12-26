@@ -26,7 +26,7 @@
           </div>
           <div>
             <p class="label">语言</p>
-            <p>{{ movie.language || "--" }}</p>
+            <p>{{ formatLanguage(movie.language) }}</p>
           </div>
           <div>
             <p class="label">票房</p>
@@ -133,7 +133,9 @@
         <div class="card review-card" v-for="item in reviews" :key="item.review_id">
           <div class="review-head">
             <strong>{{ item.username }}</strong>
-            <span class="muted">{{ formatDate(item.created_at) }}</span>
+            <span class="muted">
+              {{ formatDate(item.created_at) }}
+            </span>
           </div>
           <p v-if="editingReviewId !== item.review_id">{{ item.content }}</p>
           <div v-else>
@@ -178,7 +180,7 @@
           <div class="card-body">
             <div>
               <h3>{{ item.title }}</h3>
-              <p class="muted">{{ item.year || "-" }} / {{ item.language || "-" }}</p>
+              <p class="muted">{{ item.year || "-" }} / {{ formatLanguage(item.language) }}</p>
             </div>
             <RouterLink class="button secondary" :to="`/movies/${item.movie_id}`">详情</RouterLink>
           </div>
@@ -227,6 +229,30 @@ const reviewCountText = ref("--");
 const tmdbRatingText = ref("--");
 const keywords = ref([]);
 const cast = ref([]);
+
+const languageLabels = {
+  zh: "中文",
+  en: "英语",
+  ja: "日语",
+  ko: "韩语",
+  fr: "法语",
+  de: "德语",
+  es: "西班牙语",
+  it: "意大利语",
+  ru: "俄语",
+  pt: "葡萄牙语",
+  hi: "印地语",
+  th: "泰语",
+  id: "印尼语",
+  ms: "马来语",
+  ar: "阿拉伯语",
+  tr: "土耳其语",
+  nl: "荷兰语",
+  sv: "瑞典语",
+  no: "挪威语",
+  da: "丹麦语",
+  fi: "芬兰语"
+};
 const bookmarkNote = ref("");
 const bookmarkId = ref(null);
 const bookmarkType = ref(null);
@@ -252,6 +278,12 @@ function formatRevenue(value) {
     currency: "USD",
     maximumFractionDigits: 0
   }).format(Number(value));
+}
+
+function formatLanguage(code) {
+  if (!code) return "--";
+  const clean = String(code).toLowerCase();
+  return languageLabels[clean] || code;
 }
 
 function isOwnReview(item) {
